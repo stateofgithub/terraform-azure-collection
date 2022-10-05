@@ -1,6 +1,8 @@
 #! /usr/local/bin/python3
 
+import asyncio
 import azure.functions as func
+import functools
 import logging
 import requests
 import json
@@ -34,7 +36,6 @@ class ObserveClient:
         self.max_timeout_sec = int(
             os.getenv("OBSERVE_CLIENT_MAX_TIMEOUT_SEC") or 10)
 
-        self.reset_state()
         logging.info(
             f"[ObserveClient] Initialized a new client: "
             f"customer_id = {self.customer_id}, "
@@ -42,7 +43,7 @@ class ObserveClient:
             f"max_batch_size_byte = {self.max_batch_size_byte}, "
             f"max_obs_per_batch = {self.max_obs_per_batch}")
 
-    def reset_state(self):
+    async def reset_state(self):
         """
         Reset the state of the client.
         """
@@ -50,7 +51,7 @@ class ObserveClient:
         self.buf = io.StringIO()
         self.buf.write("[")
 
-    def process_events(self, event_arr: func.EventHubEvent):
+    async def process_events(self, event_arr: func.EventHubEvent):
         """
         Parse and send all incoming events to Observe, with multiple batches
         if needed. Each batch is a single HTTP request containing an array of
@@ -69,33 +70,46 @@ class ObserveClient:
         self.event_metadata = event_arr[0].metadata
         # Index of the starting event in current batch.
         batch_start_index = 0
+        await self.reset_state()
 
         for e in event_arr:
             # Here we assume the event body is always a valid JSON, as described
             # in the Azure documentation.
-            self.buf.write(e.get_body().decode())
-            self.buf.write(",")
-            self.num_obs_in_cur_batch += 1
+            try:
+                raw_data = json.loads(e.get_body().decode())
+            except:
+                raise Exception("Event data is not a valid JSON")
+
+            # Data could be a list of records in the format of {"records": [...]}
+            # In this case, we break it down into multiple observations.
+            is_json_list = ("records" in raw_data and type(
+                raw_data["records"]) is list)
+            for r in raw_data["records"] if is_json_list else [raw_data]:
+                self.buf.write(json.dumps(r, separators=(',', ':')))
+                self.buf.write(",")
+                self.num_obs_in_cur_batch += 1
 
             # Check whether we need to flush the current buffer to Observe.
             if self.num_obs_in_cur_batch >= self.max_obs_per_batch or \
                     self.buf.tell() >= self.max_batch_size_byte:
                 self.buf.write(
-                    self._build_batch_metadata_json(batch_start_index))
+                    await self._build_batch_metadata_json(batch_start_index))
                 # Update the start index for the next batch.
                 batch_start_index += self.num_obs_in_cur_batch
                 self.buf.write("]")
-                self._send_batch()
+                await self._send_batch()
+                await self.reset_state()
 
         # Flush remaining data from the buffer to Observe.
         if self.num_obs_in_cur_batch > 0:
-            self.buf.write(self._build_batch_metadata_json(batch_start_index))
+            self.buf.write(await self._build_batch_metadata_json(batch_start_index))
             self.buf.write("]")
-            self._send_batch()
+            await self._send_batch()
+            await self.reset_state()
 
         logging.info(f"[ObserveClient] {len(event_arr)} events processed.")
 
-    def _build_batch_metadata_json(self, batch_start_index: int) -> str:
+    async def _build_batch_metadata_json(self, batch_start_index: int) -> str:
         """
         Construct a metadata observation for the current batch, as the last
         record in the JSON array.
@@ -122,7 +136,7 @@ class ObserveClient:
 
         return json.dumps(batch_meta, separators=(',', ':'))
 
-    def _send_batch(self):
+    async def _send_batch(self):
         """
         Wrap up the batch, and send the observations in the current buffer to
         Observe's collector endpoint.
@@ -130,18 +144,29 @@ class ObserveClient:
         if self.buf.tell() <= 0:
             raise Exception("Buffer should contain data but is empty")
 
+        if os.getenv("DEBUG_OUTPUT") == 'true':
+            # Instead of sending data to Observe, print it out to logging.
+            logging.critical(f"[ObserveClient] {self.buf.getvalue()}")
+            return
+
         # Send the request.
         req_url = f"https://{self.customer_id}.collect.{self.observe_domain}/v1/http/azure?source=EventHubTriggeredFunction"
         s = requests.Session()
         s.mount(req_url, HTTPAdapter(max_retries=self.max_retries))
-        response = s.post(
-            req_url,
-            headers={
-                'Authorization': 'Bearer ' + self.datastream_token,
-                'Content-type': 'application/json'},
-            data=bytes(self.buf.getvalue().encode('utf-8')),
-            timeout=self.max_timeout_sec
+
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(
+            None,
+            functools.partial(
+                s.post,
+                req_url,
+                headers={
+                    'Authorization': 'Bearer ' + self.datastream_token,
+                    'Content-type': 'application/json'},
+                data=bytes(self.buf.getvalue().encode('utf-8')),
+                timeout=self.max_timeout_sec)
         )
+        response = await future
 
         # Error handling.
         response.raise_for_status()
@@ -149,20 +174,17 @@ class ObserveClient:
         logging.info(
             f"[ObserveClient] {self.num_obs_in_cur_batch} observations sent, "
             f"response: {response.json()}")
-        self.reset_state()
 
 
-def main(event: func.EventHubEvent):
+async def main(event: func.EventHubEvent):
     # Create an HTTP client, or load it from the cache.
     global OBSERVE_CLIENT
     if OBSERVE_CLIENT is None:
         OBSERVE_CLIENT = ObserveClient()
-    else:
-        OBSERVE_CLIENT.reset_state()
 
     # Process the array of new events.
     try:
-        OBSERVE_CLIENT.process_events(event)
+        await OBSERVE_CLIENT.process_events(event)
     except Exception as e:
         logging.critical(f"[ObserveClient] {str(e)}")
         exit(-1)
