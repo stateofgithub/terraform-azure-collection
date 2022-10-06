@@ -5,8 +5,8 @@
       "type": "eventHubTrigger",
       "name": "event",
       "direction": "in",
-      "eventHubName": "observeeventhub",
-      "connection": "OBSERVE_EVENTHUB_CONNECTION_STRING",
+      "eventHubName": "%OBSERVE_EVENTHUB_NAME%",
+      "connection": "%OBSERVE_EVENTHUB_CONNECTION_STRING%",
       "cardinality": "many",
       "consumerGroup": "$Default"
     }
