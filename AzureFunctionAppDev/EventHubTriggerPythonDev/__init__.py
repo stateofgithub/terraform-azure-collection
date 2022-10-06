@@ -28,10 +28,12 @@ class ObserveClient:
             exit(-1)
 
         # Optional environment variables with default value.
-        self.max_batch_size_byte = int(
-            os.getenv("OBSERVE_CLIENT_MAX_BATCH_SIZE_BYTE") or 512*1024)
-        self.max_obs_per_batch = int(
-            os.getenv("OBSERVE_CLIENT_MAX_OBS_PER_BATCH") or 256)
+        # Each request to Observe can batch multiple events from Event Hub,
+        # and each event can contains multiple observation records.
+        self.max_req_size_byte = int(
+            os.getenv("OBSERVE_CLIENT_MAX_REQ_SIZE_BYTE") or 512*1024)
+        self.max_events_per_req = int(
+            os.getenv("OBSERVE_CLIENT_MAX_EVENTS_PER_REQ") or 256)
         self.max_retries = int(os.getenv("OBSERVE_CLIENT_MAX_RETRIES") or 5)
         self.max_timeout_sec = int(
             os.getenv("OBSERVE_CLIENT_MAX_TIMEOUT_SEC") or 10)
@@ -40,22 +42,22 @@ class ObserveClient:
             f"[ObserveClient] Initialized a new client: "
             f"customer_id = {self.customer_id}, "
             f"domain = {self.observe_domain}, "
-            f"max_batch_size_byte = {self.max_batch_size_byte}, "
-            f"max_obs_per_batch = {self.max_obs_per_batch}")
+            f"max_req_size_byte = {self.max_req_size_byte}, "
+            f"max_events_per_req = {self.max_events_per_req}")
 
     async def reset_state(self):
         """
         Reset the state of the client.
         """
-        self.num_obs_in_cur_batch = 0
+        self.num_obs_in_cur_req = 0
+        self.num_events_in_cur_req = 0
         self.buf = io.StringIO()
         self.buf.write("[")
 
     async def process_events(self, event_arr: func.EventHubEvent):
         """
-        Parse and send all incoming events to Observe, with multiple batches
-        if needed. Each batch is a single HTTP request containing an array of
-        JSON observations.
+        Parse and send all incoming events to Observe, in multiple requests
+        if needed. Each HTTP request contains an array of JSON observations.
         """
         if len(event_arr) == 0:
             logging.error("[ObserveClient] 0 event to process, skip")
@@ -67,9 +69,8 @@ class ObserveClient:
             raise Exception(
                 "Event metadata is missing for is function invocation")
 
-        self.event_metadata = event_arr[0].metadata
-        # Index of the starting event in current batch.
-        batch_start_index = 0
+        # Index of the starting event in the current request.
+        event_index = 0
         await self.reset_state()
 
         for e in event_arr:
@@ -80,6 +81,8 @@ class ObserveClient:
             except:
                 raise Exception("Event data is not a valid JSON")
 
+            self.num_events_in_cur_req += 1
+
             # Data could be a list of records in the format of {"records": [...]}
             # In this case, we break it down into multiple observations.
             is_json_list = ("records" in raw_data and type(
@@ -87,58 +90,61 @@ class ObserveClient:
             for r in raw_data["records"] if is_json_list else [raw_data]:
                 self.buf.write(json.dumps(r, separators=(',', ':')))
                 self.buf.write(",")
-                self.num_obs_in_cur_batch += 1
+                self.num_obs_in_cur_req += 1
 
             # Check whether we need to flush the current buffer to Observe.
-            if self.num_obs_in_cur_batch >= self.max_obs_per_batch or \
-                    self.buf.tell() >= self.max_batch_size_byte:
+            if self.num_events_in_cur_req >= self.max_events_per_req or \
+                    self.buf.tell() >= self.max_req_size_byte:
                 self.buf.write(
-                    await self._build_batch_metadata_json(batch_start_index))
-                # Update the start index for the next batch.
-                batch_start_index += self.num_obs_in_cur_batch
+                    await self._build_req_metadata_json(
+                        event_arr[0].metadata, event_index))
+                # Update the start index for the next request.
+                event_index += self.num_events_in_cur_req
                 self.buf.write("]")
-                await self._send_batch()
+                await self._send_request()
                 await self.reset_state()
 
         # Flush remaining data from the buffer to Observe.
-        if self.num_obs_in_cur_batch > 0:
-            self.buf.write(await self._build_batch_metadata_json(batch_start_index))
+        if self.num_obs_in_cur_req > 0:
+            self.buf.write(await self._build_req_metadata_json(
+                event_arr[0].metadata, event_index))
             self.buf.write("]")
-            await self._send_batch()
+            await self._send_request()
             await self.reset_state()
 
         logging.info(f"[ObserveClient] {len(event_arr)} events processed.")
 
-    async def _build_batch_metadata_json(self, batch_start_index: int) -> str:
+    async def _build_req_metadata_json(self, event_metadata, event_index) -> str:
         """
-        Construct a metadata observation for the current batch, as the last
-        record in the JSON array.
+        Construct a metadata observation for the current Observe request,
+        as the last record in the JSON array.
         """
         if self.buf.tell() <= 0:
             raise Exception("Buffer should contain data but is empty")
-        elif self.num_obs_in_cur_batch <= 0:
+        elif self.num_obs_in_cur_req <= 0:
             raise Exception(
-                "There should be at least 1 observation in current batch")
+                "There should be at least 1 observation in current request")
 
-        batch_meta = {
-            "ObserveNumEvents": self.num_obs_in_cur_batch,
+        req_meta = {
+            "ObserveNumEvents": self.num_events_in_cur_req,
+            "ObserveNumObservations": self.num_obs_in_cur_req,
             "ObserveTotalSizeByte": self.buf.tell(),
             "ObserveSubmitTimeUtc": str(datetime.utcnow()).replace(' ', 'T'),
-            "AzureEventHubPartitionContext": self.event_metadata.get("PartitionContext", {}),
+            "AzureEventHubPartitionContext": event_metadata.get("PartitionContext", {}),
         }
 
-        if "SystemPropertiesArray" not in self.event_metadata:
-            batch_meta["AzureEventHubSystemPropertiesArray"] = {}
+        if "SystemPropertiesArray" not in event_metadata:
+            req_meta["AzureEventHubSystemPropertiesArray"] = {}
         else:
             # Get the sub array from the original metadata.
-            batch_meta["AzureEventHubSystemPropertiesArray"] = self.event_metadata[
-                "SystemPropertiesArray"][batch_start_index: batch_start_index+self.num_obs_in_cur_batch]
+            req_meta["AzureEventHubSystemPropertiesArray"] = event_metadata[
+                "SystemPropertiesArray"][event_index: event_index+self.num_obs_in_cur_req]
 
-        return json.dumps(batch_meta, separators=(',', ':'))
+        return json.dumps(req_meta, separators=(',', ':'))
 
-    async def _send_batch(self):
+    async def _send_request(self):
         """
-        Wrap up the batch, and send the observations in the current buffer to
+        Wrap up the request, and send the observations in the current buffer to
         Observe's collector endpoint.
         """
         if self.buf.tell() <= 0:
@@ -172,7 +178,7 @@ class ObserveClient:
         response.raise_for_status()
 
         logging.info(
-            f"[ObserveClient] {self.num_obs_in_cur_batch} observations sent, "
+            f"[ObserveClient] {self.num_obs_in_cur_req} observations sent, "
             f"response: {response.json()}")
 
 
