@@ -28,10 +28,10 @@ class ObserveClient:
             exit(-1)
 
         # Optional environment variables with default value.
-        # Each request to Observe can batch multiple events from Event Hub,
-        # and each event can contains multiple observation records.
         self.max_req_size_byte = int(
             os.getenv("OBSERVE_CLIENT_MAX_REQ_SIZE_BYTE") or 512*1024)
+        # Each request to Observe can batch multiple events from Event Hub,
+        # and each event can contains multiple observation records.
         self.max_events_per_req = int(
             os.getenv("OBSERVE_CLIENT_MAX_EVENTS_PER_REQ") or 256)
         self.max_retries = int(os.getenv("OBSERVE_CLIENT_MAX_RETRIES") or 5)
@@ -46,9 +46,6 @@ class ObserveClient:
             f"max_events_per_req = {self.max_events_per_req}")
 
     async def reset_state(self):
-        """
-        Reset the state of the client.
-        """
         self.num_obs_in_cur_req = 0
         self.num_events_in_cur_req = 0
         self.buf = io.StringIO()
@@ -67,22 +64,19 @@ class ObserveClient:
         # metadata of all the events.
         if event_arr[0].metadata == {}:
             raise Exception(
-                "Event metadata is missing for is function invocation")
+                "Event metadata is missing from function invocation")
 
-        # Index of the starting event in the current request.
+        # Index of the starting event in the current Observe request.
         event_index = 0
         await self.reset_state()
 
         for e in event_arr:
-            # Here we assume the event body is always a valid JSON, as described
-            # in the Azure documentation.
             try:
                 raw_data = json.loads(e.get_body().decode())
             except:
                 raise Exception("Event data is not a valid JSON")
 
             self.num_events_in_cur_req += 1
-
             # Data could be a list of records in the format of {"records": [...]}
             # In this case, we break it down into multiple observations.
             is_json_list = ("records" in raw_data and type(
@@ -92,7 +86,6 @@ class ObserveClient:
                 self.buf.write(",")
                 self.num_obs_in_cur_req += 1
 
-            # Check whether we need to flush the current buffer to Observe.
             if self.num_events_in_cur_req >= self.max_events_per_req or \
                     self.buf.tell() >= self.max_req_size_byte:
                 self.buf.write(
@@ -104,7 +97,6 @@ class ObserveClient:
                 await self._send_request()
                 await self.reset_state()
 
-        # Flush remaining data from the buffer to Observe.
         if self.num_obs_in_cur_req > 0:
             self.buf.write(await self._build_req_metadata_json(
                 event_arr[0].metadata, event_index))
@@ -136,7 +128,6 @@ class ObserveClient:
         if "SystemPropertiesArray" not in event_metadata:
             req_meta["AzureEventHubSystemPropertiesArray"] = {}
         else:
-            # Get the sub array from the original metadata.
             req_meta["AzureEventHubSystemPropertiesArray"] = event_metadata[
                 "SystemPropertiesArray"][event_index: event_index+self.num_obs_in_cur_req]
 
@@ -151,7 +142,7 @@ class ObserveClient:
             raise Exception("Buffer should contain data but is empty")
 
         if os.getenv("DEBUG_OUTPUT") == 'true':
-            # Instead of sending data to Observe, print it out to logging.
+            # Instead of sending data to Observe endpoint, print it out for debugging.
             logging.critical(f"[ObserveClient] {self.buf.getvalue()}")
             return
 
@@ -188,7 +179,6 @@ async def main(event: func.EventHubEvent):
     if OBSERVE_CLIENT is None:
         OBSERVE_CLIENT = ObserveClient()
 
-    # Process the array of new events.
     try:
         await OBSERVE_CLIENT.process_events(event)
     except Exception as e:
