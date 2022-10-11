@@ -19,9 +19,9 @@ class ObserveClient:
     def __init__(self):
         # Required environment variables.
         try:
-            self.customer_id = os.environ["OBSERVE_CUSTOMER_ID"]
+            self.observe_customer = os.environ["OBSERVE_CUSTOMER"]
+            self.observe_token = os.environ["OBSERVE_TOKEN"]
             self.observe_domain = os.environ["OBSERVE_DOMAIN"]
-            self.datastream_token = os.environ["OBSERVE_DATASTREAM_TOKEN"]
         except:
             logging.critical(
                 "[ObserveClient] Required ENV_VARS are not set properly")
@@ -40,7 +40,7 @@ class ObserveClient:
 
         logging.info(
             f"[ObserveClient] Initialized a new client: "
-            f"customer_id = {self.customer_id}, "
+            f"observe_customer = {self.observe_customer}, "
             f"domain = {self.observe_domain}, "
             f"max_req_size_byte = {self.max_req_size_byte}, "
             f"max_events_per_req = {self.max_events_per_req}")
@@ -147,7 +147,7 @@ class ObserveClient:
             return
 
         # Send the request.
-        req_url = f"https://{self.customer_id}.collect.{self.observe_domain}/v1/http/azure?source=EventHubTriggeredFunction"
+        req_url = f"https://{self.observe_customer}.collect.{self.observe_domain}/v1/http/azure?source=EventHubTriggeredFunction"
         s = requests.Session()
         s.mount(req_url, HTTPAdapter(max_retries=self.max_retries))
 
@@ -158,7 +158,7 @@ class ObserveClient:
                 s.post,
                 req_url,
                 headers={
-                    'Authorization': 'Bearer ' + self.datastream_token,
+                    'Authorization': 'Bearer ' + self.observe_token,
                     'Content-type': 'application/json'},
                 data=bytes(self.buf.getvalue().encode('utf-8')),
                 timeout=self.max_timeout_sec)

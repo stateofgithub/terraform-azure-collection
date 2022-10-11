@@ -9,7 +9,7 @@ variable "observe_customer" {
   description = "Observe customer id"
 }
 
-variable "observe_ingest_token" {
+variable "observe_token" {
   type        = string
   description = "Observe ingest token"
 }

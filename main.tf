@@ -107,8 +107,8 @@ resource "azurerm_linux_function_app" "observe_function_app" {
     WEBSITE_RUN_FROM_PACKAGE = 1
     AzureWebJobsDisableHomepage = true
     OBSERVE_DOMAIN = var.observe_domain
-    OBSERVE_CUSTOMER_ID = var.observe_customer
-    OBSERVE_DATASTREAM_TOKEN = var.observe_ingest_token
+    OBSERVE_CUSTOMER = var.observe_customer
+    OBSERVE_TOKEN = var.observe_token
     OBSERVE_EVENTHUB_CONNECTION_STRING = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
   }
 
