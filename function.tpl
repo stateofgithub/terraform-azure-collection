@@ -1,5 +1,6 @@
 {
-  "scriptFile": "__init__.py",
+  "scriptFile": "main.py",
+  "entryPoint": "run",
   "bindings": [
     {
       "type": "eventHubTrigger",

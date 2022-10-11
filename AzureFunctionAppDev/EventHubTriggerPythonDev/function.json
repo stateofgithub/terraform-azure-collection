@@ -1,12 +1,13 @@
 {
-  "scriptFile": "__init__.py",
+  "scriptFile": "main.py",
+  "entryPoint": "run",
   "bindings": [
     {
       "type": "eventHubTrigger",
       "name": "event",
       "direction": "in",
-      "eventHubName": "%OBSERVE_EVENTHUB_NAME%",
-      "connection": "%OBSERVE_EVENTHUB_CONNECTION_STRING%",
+      "eventHubName": "jyceventhubfordev",
+      "connection": "JycEhNspForDev_RootManageSharedAccessKey_EVENTHUB",
       "cardinality": "many",
       "consumerGroup": "$Default"
     }
