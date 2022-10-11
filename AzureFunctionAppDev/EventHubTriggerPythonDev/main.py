@@ -173,7 +173,7 @@ class ObserveClient:
             f"response: {response.json()}")
 
 
-async def main(event: func.EventHubEvent):
+async def run(event: func.EventHubEvent):
     # Create an HTTP client, or load it from the cache.
     global OBSERVE_CLIENT
     if OBSERVE_CLIENT is None:
