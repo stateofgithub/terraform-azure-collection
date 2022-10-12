@@ -6,8 +6,8 @@
       "type": "eventHubTrigger",
       "name": "event",
       "direction": "in",
-      "eventHubName": "jyceventhubfordev",
-      "connection": "JycEhNspForDev_RootManageSharedAccessKey_EVENTHUB",
+      "eventHubName": "observeeventhub",
+      "connection": "OBSERVE_EVENTHUB_CONNECTION_STRING",
       "cardinality": "many",
       "consumerGroup": "$Default"
     }

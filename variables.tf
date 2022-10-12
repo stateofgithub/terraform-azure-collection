@@ -13,3 +13,18 @@ variable "observe_token" {
   type        = string
   description = "Observe ingest token"
 }
+
+variable "eventhub_namespace" {
+  type        = string
+  description = "Eventhub namespace to use for function"
+}
+
+variable "eventhub_name" {
+  type        = string
+  description = "Eventhub name to use for function"
+}
+
+variable "resource_group_name" {
+  type        = string
+  description = "Eventhub name to use for function"
+}

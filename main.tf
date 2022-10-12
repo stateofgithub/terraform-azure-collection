@@ -5,12 +5,12 @@
 #   - do we still need a storage blob if we are deploying through zip?
 
 resource "azurerm_resource_group" "observe_resource_group" {
-  name     = "observe-resources"
+  name     = var.resource_group_name
   location = "East US"
 }
 
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
-  name                = "observeEventhubNamesapce"
+  name                = var.eventhub_namespace
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Basic"
@@ -24,7 +24,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
 }
 
 resource "azurerm_eventhub" "observe_eventhub" {
-  name                = "observeeventhub"
+  name                = var.eventhub_name
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   partition_count     = 4
