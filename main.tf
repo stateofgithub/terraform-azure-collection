@@ -2,6 +2,7 @@
 #   - set up service insights automatically
 #   - break out into separate files to make more readable
 #   - automate configuring resources sending data to event hub
+#   - do we still need a storage blob if we are deploying through zip?
 
 resource "azurerm_resource_group" "observe_resource_group" {
   name     = "observe-resources"
@@ -14,7 +15,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Basic"
 
-  zone_redundant = true
+  # zone_redundant = true
   capacity            = 1
 
   tags = {
@@ -40,22 +41,12 @@ resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" 
   manage              = false
 }
 
-resource "azurerm_eventhub_namespace_authorization_rule" "observe_eventhub_namespace_access_policy" {
-  name                = "observeSharedAccessPolicy"
-  namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
-  resource_group_name = azurerm_resource_group.observe_resource_group.name
-
-  listen = true
-  send   = true
-  manage = false
-}
-
 resource "azurerm_service_plan" "observe_service_plan" {
   name                = "observe-service-plan"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
-  sku_name            = "EP1"
+  sku_name            = "S1"
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
@@ -96,8 +87,7 @@ resource "azurerm_storage_blob" "observe_collection_blob" {
   depends_on = [
     data.archive_file.observe_collection_function
   ]
-  # name = "${data.archive_file.observe_collection_function.output_base64sha256}.zip"
-  name = "${filesha256(data.archive_file.observe_collection_function.output_path)}.zip"
+  name = "observe-${data.archive_file.observe_collection_function.output_base64sha256}-collection.zip"
   storage_account_name = azurerm_storage_account.observe_storage_account.name
   storage_container_name = azurerm_storage_container.observe_storage_container.name
   type = "Block"
@@ -114,7 +104,6 @@ resource "azurerm_linux_function_app" "observe_function_app" {
   storage_account_access_key = azurerm_storage_account.observe_storage_account.primary_access_key
 
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME = "python"
     WEBSITE_RUN_FROM_PACKAGE = 1
     AzureWebJobsDisableHomepage = true
     OBSERVE_DOMAIN = var.observe_domain
@@ -123,11 +112,15 @@ resource "azurerm_linux_function_app" "observe_function_app" {
     OBSERVE_EVENTHUB_CONNECTION_STRING = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
   }
 
-  site_config {}
+  site_config {
+      application_stack  {
+        python_version = "3.9"
+      }
+  }
 }
 
 locals {
-    publish_code_command = "az  webapp deployment source config-zip --resource-group ${azurerm_resource_group.observe_resource_group.name} --name ${azurerm_linux_function_app.observe_function_app.name} --src ${data.archive_file.observe_collection_function.output_path}"
+    publish_code_command = "az webapp deployment source config-zip --resource-group ${azurerm_resource_group.observe_resource_group.name} --name ${azurerm_linux_function_app.observe_function_app.name} --src ${data.archive_file.observe_collection_function.output_path}"
     pip_install_command  =  "pip install --target='./AzureFunctionAppDev/.python_packages/lib/site-packages' -r ./AzureFunctionAppDev/requirements.txt"
 }
 
@@ -144,33 +137,13 @@ resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
     command = local.publish_code_command
   }
-  depends_on = [local.publish_code_command]
+  depends_on = [
+    local.publish_code_command
+    ]
+
   triggers = {
-    input_json = filemd5(data.archive_file.observe_collection_function.output_path) //only refresh if collections changed
+    input_json = data.archive_file.observe_collection_function.output_md5 //only refresh if collections changed
     publish_code_command = local.publish_code_command
   }
 }
 
-# resource "azurerm_monitor_diagnostic_setting" "observe_diagnostics" {
-#   name               = "send_to_observe"
-#   target_resource_id = resource.azurerm_linux_function_app.observe_function_app.id
-#   eventhub_name  = resource.azurerm_eventhub.observe_eventhub.name
-#   eventhub_authorization_rule_id = resource.azurerm_eventhub_namespace_authorization_rule.observe_eventhub_namespace_access_policy.id
-
-#   log {
-#     category = "FunctionAppLogs"
-#     enabled  = true
-
-#     # retention_policy {
-#     #   enabled = false
-#     # }
-#   }
-
-#   metric {
-#     category = "AllMetrics"
-
-#     retention_policy {
-#       enabled = false
-#     }
-#   }
-# }
