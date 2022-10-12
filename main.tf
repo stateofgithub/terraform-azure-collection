@@ -2,6 +2,7 @@
 #   - set up service insights automatically
 #   - break out into separate files to make more readable
 #   - automate configuring resources sending data to event hub
+#   - do we still need a storage blob if we are deploying through zip?
 
 resource "azurerm_resource_group" "observe_resource_group" {
   name     = "observe-resources"
@@ -12,9 +13,9 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   name                = "observeEventhubNamesapce"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
-  sku                 = "Premium"
+  sku                 = "Basic"
 
-  zone_redundant = true
+  # zone_redundant = true
   capacity            = 1
 
   tags = {
@@ -45,7 +46,7 @@ resource "azurerm_service_plan" "observe_service_plan" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
-  sku_name            = "EP1"
+  sku_name            = "S1"
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
@@ -86,7 +87,7 @@ resource "azurerm_storage_blob" "observe_collection_blob" {
   depends_on = [
     data.archive_file.observe_collection_function
   ]
-  name = "${filesha256(data.archive_file.observe_collection_function.output_path)}.zip"
+  name = "observe-${data.archive_file.observe_collection_function.output_base64sha256}-collection.zip"
   storage_account_name = azurerm_storage_account.observe_storage_account.name
   storage_container_name = azurerm_storage_container.observe_storage_container.name
   type = "Block"
@@ -103,7 +104,6 @@ resource "azurerm_linux_function_app" "observe_function_app" {
   storage_account_access_key = azurerm_storage_account.observe_storage_account.primary_access_key
 
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME = "python"
     WEBSITE_RUN_FROM_PACKAGE = 1
     AzureWebJobsDisableHomepage = true
     OBSERVE_DOMAIN = var.observe_domain
@@ -112,7 +112,11 @@ resource "azurerm_linux_function_app" "observe_function_app" {
     OBSERVE_EVENTHUB_CONNECTION_STRING = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
   }
 
-  site_config {}
+  site_config {
+      application_stack  {
+        python_version = "3.9"
+      }
+  }
 }
 
 locals {
@@ -133,9 +137,12 @@ resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
     command = local.publish_code_command
   }
-  depends_on = [local.publish_code_command]
+  depends_on = [
+    local.publish_code_command
+    ]
+
   triggers = {
-    input_json = filemd5(data.archive_file.observe_collection_function.output_path) //only refresh if collections changed
+    input_json = data.archive_file.observe_collection_function.output_md5 //only refresh if collections changed
     publish_code_command = local.publish_code_command
   }
 }
