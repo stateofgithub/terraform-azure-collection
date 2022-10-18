@@ -45,7 +45,7 @@ def list_all_resources() -> io.StringIO:
     return buf
 
 
-async def run(mytimer: func.TimerRequest) -> None:
+async def main(mytimer: func.TimerRequest) -> None:
     # Create an HTTP client, or load it from the cache.
     global OBSERVE_CLIENT
     if OBSERVE_CLIENT is None:
