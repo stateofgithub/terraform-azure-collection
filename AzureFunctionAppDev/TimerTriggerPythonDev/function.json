@@ -6,7 +6,7 @@
       "name": "mytimer",
       "type": "timerTrigger",
       "direction": "in",
-      "schedule": "*/10 * * * * *"
+      "schedule": "%TimerTriggerPythonDev_schedule%"
     }
   ]
 }

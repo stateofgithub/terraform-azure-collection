@@ -11,6 +11,7 @@ import io
 
 from datetime import datetime
 from requests.adapters import HTTPAdapter
+from azure.identity import DefaultAzureCredential
 
 OBSERVE_CLIENT = None
 
