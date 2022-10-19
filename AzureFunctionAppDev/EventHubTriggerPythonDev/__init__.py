@@ -13,7 +13,7 @@ EVENTHUB_HANDLER = None
 class EventHubHandler(BaseHandler):
     def __init__(self):
         super().__init__()
-        self.source = "eventhub_triggered_func"
+        self.source = "EventHubTriggeredFunc"
         self._reset_state()
 
     async def process_events(self, event_arr) -> None:

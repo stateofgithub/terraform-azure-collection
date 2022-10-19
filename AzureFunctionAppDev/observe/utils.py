@@ -13,6 +13,9 @@ from requests.adapters import HTTPAdapter
 
 
 class BaseHandler:
+    """
+    TODO: comment
+    """
     def __init__(self):
         # Optional environment variable with default value.
         self.max_req_size_byte = int(
@@ -20,7 +23,7 @@ class BaseHandler:
 
         self.observe_client = ObserveClient()
         self._reset_state()
-        self.source = "unknown"
+        self.source = "Unknown"
 
     def _reset_state(self):
         self.event_metadata = None
@@ -34,7 +37,7 @@ class BaseHandler:
 
         extra = {
             "source": self.source,
-            "id": timestamp.strftime("%Y%m%d%H%M%S%f"),
+            "timestamp": timestamp.strftime("%Y%m%d%H%M%S%f"),
         }
         # Send data to Observe.
         await self.observe_client.send_observations(payload=self.buf.getvalue(), extra=extra)
