@@ -57,6 +57,7 @@ class BaseHandler:
             "ObserveNumObservations": self.num_obs,
             "ObserveTotalSizeByte": self.buf.tell(),
             "ObserveSubmitTimeUtc": timestamp.isoformat(),
+            "AzureSource": self.source
         }
 
         if self.event_metadata != None:

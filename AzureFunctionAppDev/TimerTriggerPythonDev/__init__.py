@@ -25,7 +25,7 @@ RESOURCES_HANDLER = None
 class ResourcesHandler(BaseHandler):
     def __init__(self):
         super().__init__()
-        self.source = "TimerTriggeredFunc"
+        self.source = "ResourceManagement"
         self._reset_state()
 
         # Required environment variables.
