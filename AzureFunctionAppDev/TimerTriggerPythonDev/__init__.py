@@ -1,25 +1,16 @@
 #! /usr/local/bin/python3
 
-import logging
 import azure.functions as func
 import json
+import logging
 import os
 
 from azure.mgmt.resource import ResourceManagementClient, SubscriptionClient
 from azure.identity import ClientSecretCredential
-
 from observe.utils import BaseHandler
 
 
 RESOURCES_HANDLER = None
-
-# TODO:
-# permissions: how to work around the AZURE_TENANT_ID, AZURE_CLIENT_ID, and APP stuff?
-# request id
-# rename "EventHubTriggerPythonDev" and "TimerTriggerPythonDev"
-# make sure my changes are compatible with the rest of the
-# add comment to all function and classes.
-# Add more logging
 
 
 class ResourcesHandler(BaseHandler):
@@ -38,27 +29,33 @@ class ResourcesHandler(BaseHandler):
                 "[ResourcesHandler] Required ENV_VARS are not set properly")
             exit(-1)
 
-    async def list_resources(self) -> None:
         # Construct Azure credentials.
-        credentials = ClientSecretCredential(
+        self.credentials = ClientSecretCredential(
             tenant_id=self.azure_tenant_id,
             client_id=self.azure_client_id,
             client_secret=self.azure_client_secret)
 
-        # Get the list of subscription IDs for this tenant, and fetch resources
-        # information for each of them.
-        subscription_client = SubscriptionClient(credentials)
-        for sub in subscription_client.subscriptions.list():
-            sub_name = sub.serialize(keep_readonly=True)["displayName"]
-            sub_id = sub.serialize(keep_readonly=True)[
-                "subscriptionId"]
+    async def _list_subscriptions(self) -> dict:
+        client = SubscriptionClient(self.credentials)
+        subscriptions = []
+        for sub in client.subscriptions.list():
+            subscriptions.append(sub.serialize(keep_readonly=True))
+        return subscriptions
+
+    async def list_resources(self) -> None:
+        """
+        Get the list of subscription IDs for this tenant, and fetch resources
+        information for each of the subscription.
+        """
+        for subscription in await self._list_subscriptions():
+            sub_name = subscription["displayName"]
+            sub_id = subscription["subscriptionId"]
             logging.info(
                 f"[ResourcesHandler] Processing resources for subscription \"{sub_name}\" ({sub_id}).")
-            resource_client = ResourceManagementClient(credentials, sub_id)
-
+            client = ResourceManagementClient(self.credentials, sub_id)
             self._reset_state()
             self.buf.write("[")
-            for resource in resource_client.resources.list(expand='createdTime,changedTime,provisioningState'):
+            for resource in client.resources.list(expand='createdTime,changedTime,provisioningState'):
                 self.buf.write(json.dumps(resource.serialize(
                     keep_readonly=True), separators=(',', ':')))
                 self.buf.write(",")

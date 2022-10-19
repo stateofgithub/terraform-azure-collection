@@ -14,7 +14,8 @@ from requests.adapters import HTTPAdapter
 
 class BaseHandler:
     """
-    TODO: comment
+    Async base handler class that manages the data buffer and Observe HTTP
+    client.
     """
     def __init__(self):
         # Optional environment variable with default value.
@@ -60,7 +61,8 @@ class BaseHandler:
             "AzureSource": self.source
         }
 
-        if self.event_metadata != None:
+        # In case of EventHub triggered function.
+        if self.event_metadata != None and self.source == "EventHub":
             req_meta["AzureEventHubPartitionContext"] = self.event_metadata.get(
                 "PartitionContext", {})
             if "SystemPropertiesArray" not in self.event_metadata:
