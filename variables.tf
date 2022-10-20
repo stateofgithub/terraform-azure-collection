@@ -28,3 +28,23 @@ variable "resource_group_name" {
   type        = string
   description = "Eventhub name to use for function"
 }
+
+variable "azure_tenant_id" {
+  type        = string
+  description = "Eventhub name to use for function"
+}
+
+variable "azure_client_id" {
+  type        = string
+  description = "Eventhub name to use for function"
+}
+
+variable "azure_client_secret" {
+  type        = string
+  description = "Eventhub name to use for function"
+}
+
+variable "timer_func_schedule" {
+  type        = string
+  description = "Eventhub name to use for function"
+}

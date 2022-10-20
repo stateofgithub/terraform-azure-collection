@@ -6,11 +6,15 @@ Next we need to create our variables that will get injected in to the app.  Crea
 The contents of that file should be:
 
     observe_customer = "<OBSERVE_CUSTOMER_ID>"
-    observe_ingest_token = "<DATASTREAM_INGEST_TOKEN>"
+    observe_token = "<DATASTREAM_INGEST_TOKEN>"
     observe_domain = "<OBSERVE_DOMAIN(i.e. observe-staging.com)>"
     eventhub_namespace = "<EVENTHUB_NAMESPACE>"
     eventhub_name = "<EVENTHUB_NAME>"
     resource_group_name = "<RESOURCE_GROUP>"
+    azure_tenant_id = "<AZURE_TENANT_ID>"
+    azure_client_id = "<AZURE_CLIENT_ID>"
+    azure_client_secret = "<AZURE_CLIENT_SECRET>"
+    timer_func_schedule = "<TIMER_TRIGGER_FUNCTION_SCHEDULE>"
 
 Next we need to login to Azure from the CLI:
 
