@@ -1,13 +1,12 @@
 {
-  "scriptFile": "main.py",
-  "entryPoint": "run",
+  "scriptFile": "__init__.py",
   "bindings": [
     {
       "type": "eventHubTrigger",
       "name": "event",
       "direction": "in",
-      "eventHubName": "observeeventhub",
-      "connection": "OBSERVE_EVENTHUB_CONNECTION_STRING",
+      "eventHubName": "%EventHubTriggerPythonDev_eventHubName%",
+      "connection": "%EventHubTriggerPythonDev_connection%",
       "cardinality": "many",
       "consumerGroup": "$Default"
     }
