@@ -74,13 +74,20 @@ data "archive_file" "observe_collection_function" {
   output_path = "./observe_collection.zip"
 }
 
-# create the template file config_json separately from the archive_file block
-resource "local_file" "function_config" {
-  content = templatefile("${path.module}/function.tpl", {
+resource "local_file" "eventhub_function_config" {
+  content = templatefile("${path.module}/eventhub_function.tpl", {
     eventHubName = azurerm_eventhub.observe_eventhub.name
-    connection = "OBSERVE_EVENTHUB_CONNECTION_STRING"
+    connection = "EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION"
   })
   filename = "${path.module}/AzureFunctionAppDev/EventHubTriggerPythonDev/function.json"
+}
+
+resource "local_file" "resource_management_function_config" {
+  content = templatefile("${path.module}/resource_management_function.tpl", {
+    eventHubName = azurerm_eventhub.observe_eventhub.name
+    schedule = "TIMER_TRIGGER_FUNCTION_SCHEDULE"
+  })
+  filename = "${path.module}/AzureFunctionAppDev/TimerTriggerPythonDev/function.json"
 }
 
 resource "azurerm_storage_blob" "observe_collection_blob" {
@@ -109,7 +116,12 @@ resource "azurerm_linux_function_app" "observe_function_app" {
     OBSERVE_DOMAIN = var.observe_domain
     OBSERVE_CUSTOMER = var.observe_customer
     OBSERVE_TOKEN = var.observe_token
-    OBSERVE_EVENTHUB_CONNECTION_STRING = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
+    AZURE_TENANT_ID = var.azure_tenant_id
+    AZURE_CLIENT_ID = var.azure_client_id
+    AZURE_CLIENT_SECRET = var.azure_client_secret
+    TIMER_TRIGGER_FUNCTION_SCHEDULE = var.timer_func_schedule
+    EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME = var.eventhub_name
+    EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
   }
 
   site_config {
@@ -125,10 +137,10 @@ locals {
 }
 
 resource "null_resource" "pip" {
-  triggers = { 
+  triggers = {
     requirements_md5 = "${filemd5("${path.module}/AzureFunctionAppDev/requirements.txt")}"
   }
-  provisioner "local-exec" {    
+  provisioner "local-exec" {
     command = local.pip_install_command
   }
 }
