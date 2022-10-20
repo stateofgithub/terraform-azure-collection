@@ -6,7 +6,6 @@ import logging
 import os
 
 from azure.mgmt.resource import ResourceManagementClient, SubscriptionClient
-from azure.identity import ClientSecretCredential
 from observe.utils import BaseHandler
 
 
@@ -19,24 +18,8 @@ class ResourcesHandler(BaseHandler):
         self.source = "ResourceManagement"
         self._reset_state()
 
-        # Required environment variables.
-        try:
-            self.azure_tenant_id = os.environ["AZURE_TENANT_ID"]
-            self.azure_client_id = os.environ["AZURE_CLIENT_ID"]
-            self.azure_client_secret = os.environ["AZURE_CLIENT_SECRET"]
-        except:
-            logging.critical(
-                "[ResourcesHandler] Required ENV_VARS are not set properly")
-            exit(-1)
-
-        # Construct Azure credentials.
-        self.credentials = ClientSecretCredential(
-            tenant_id=self.azure_tenant_id,
-            client_id=self.azure_client_id,
-            client_secret=self.azure_client_secret)
-
     async def _list_subscriptions(self) -> dict:
-        client = SubscriptionClient(self.credentials)
+        client = SubscriptionClient(self.azure_credentials)
         subscriptions = []
         for sub in client.subscriptions.list():
             subscriptions.append(sub.serialize(keep_readonly=True))
@@ -52,7 +35,7 @@ class ResourcesHandler(BaseHandler):
             sub_id = subscription["subscriptionId"]
             logging.info(
                 f"[ResourcesHandler] Processing resources for subscription \"{sub_name}\" ({sub_id}).")
-            client = ResourceManagementClient(self.credentials, sub_id)
+            client = ResourceManagementClient(self.azure_credentials, sub_id)
             self._reset_state()
             self.buf.write("[")
             for resource in client.resources.list(expand='createdTime,changedTime,provisioningState'):
