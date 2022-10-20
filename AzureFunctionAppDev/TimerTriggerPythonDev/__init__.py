@@ -5,7 +5,7 @@ import json
 import logging
 import os
 
-from azure.mgmt.resource import ResourceManagementClient, SubscriptionClient
+from azure.mgmt.resource import ResourceManagementClient
 from observe.utils import BaseHandler
 
 
@@ -17,13 +17,6 @@ class ResourcesHandler(BaseHandler):
         super().__init__()
         self.source = "ResourceManagement"
         self._reset_state()
-
-    async def _list_subscriptions(self) -> dict:
-        client = SubscriptionClient(self.azure_credentials)
-        subscriptions = []
-        for sub in client.subscriptions.list():
-            subscriptions.append(sub.serialize(keep_readonly=True))
-        return subscriptions
 
     async def list_resources(self) -> None:
         """

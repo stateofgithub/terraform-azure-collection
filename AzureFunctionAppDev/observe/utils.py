@@ -9,6 +9,7 @@ import os
 import requests
 
 from azure.identity import ClientSecretCredential
+from azure.mgmt.resource import SubscriptionClient
 from datetime import datetime
 from requests.adapters import HTTPAdapter
 
@@ -93,6 +94,12 @@ class BaseHandler:
 
         return json.dumps(req_meta, separators=(',', ':'))
 
+    async def _list_subscriptions(self) -> dict:
+        client = SubscriptionClient(self.azure_credentials)
+        subscriptions = []
+        for sub in client.subscriptions.list():
+            subscriptions.append(sub.serialize(keep_readonly=True))
+        return subscriptions
 
 class ObserveClient:
     """
