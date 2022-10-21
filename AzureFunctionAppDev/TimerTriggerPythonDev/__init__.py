@@ -23,14 +23,15 @@ class ResourcesHandler(BaseHandler):
         Get the list of subscription IDs for this tenant, and fetch resources
         information for each of the subscription.
         """
+        self._reset_state()
+        self.buf.write("[")
         for subscription in await self._list_subscriptions():
             sub_name = subscription["displayName"]
             sub_id = subscription["subscriptionId"]
             logging.info(
                 f"[ResourcesHandler] Processing resources for subscription \"{sub_name}\" ({sub_id}).")
             client = ResourceManagementClient(self.azure_credentials, sub_id)
-            self._reset_state()
-            self.buf.write("[")
+
             for resource in client.resources.list(expand='createdTime,changedTime,provisioningState'):
                 self.buf.write(json.dumps(resource.serialize(
                     keep_readonly=True), separators=(',', ':')))
@@ -42,12 +43,12 @@ class ResourcesHandler(BaseHandler):
                     self._reset_state()
                     self.buf.write("[")
 
-            if self.num_obs > 0:
-                await self._wrap_buffer_and_send_request()
-                self._reset_state()
-
             logging.info(
                 f"[ResourcesHandler] Resources processed for subscription \"{sub_name}\" ({sub_id}).")
+
+        if self.num_obs > 0:
+            await self._wrap_buffer_and_send_request()
+            self._reset_state()
 
 
 async def main(mytimer: func.TimerRequest) -> None:
