@@ -48,7 +48,6 @@ class ResourcesHandler(BaseHandler):
 
         if self.num_obs > 0:
             await self._wrap_buffer_and_send_request()
-            self._reset_state()
 
 
 async def main(mytimer: func.TimerRequest) -> None:

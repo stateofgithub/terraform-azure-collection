@@ -47,7 +47,7 @@ class BaseHandler:
 
     def _reset_state(self):
         self.event_metadata = None
-        self.vm_metadata = None
+        self.vm_metrics_metadata = None
         self.num_obs = 0
         self.buf = io.StringIO()
 
@@ -92,6 +92,10 @@ class BaseHandler:
                 req_meta["AzureEventHubSystemPropertiesArray"] = self.event_metadata["SystemPropertiesArray"]
                 req_meta["ObserveNumEvents"] = len(
                     self.event_metadata["SystemPropertiesArray"])
+
+        # In case of timer triggered function for VM metrics.
+        if self.vm_metrics_metadata != None and self.source == "VmMetrics":
+            req_meta["AzureVmMetricsSummary"] = self.vm_metrics_metadata
 
         return json.dumps(req_meta, separators=(',', ':'))
 

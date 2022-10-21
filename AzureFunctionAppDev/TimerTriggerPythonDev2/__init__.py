@@ -13,12 +13,6 @@ from observe.utils import BaseHandler
 
 VM_METRICS_HANDLER = None
 
-# TODO: error handling
-# TODO：add comments
-# add some more metadata into observation table. How many VMs? metadata of each VM (num metrics, timespan config, etc)
-# am I using async io correctly?
-# TODO: how to configure the timespan?
-
 
 class VmMetricsHandler(BaseHandler):
     def __init__(self):
@@ -28,7 +22,8 @@ class VmMetricsHandler(BaseHandler):
 
     async def _list_vms(self) -> list:
         """
-        TODO
+        Get the list of resource IDs for all the VMs in all subscriptions.
+        The VM must already been provisioned successfully.
         """
         list_expand = "createdTime,changedTime,provisioningState"
         list_filter = "resourceType eq 'Microsoft.Compute/virtualMachines'"
@@ -49,19 +44,33 @@ class VmMetricsHandler(BaseHandler):
 
     async def fetch_vm_metrics(self) -> None:
         """
-        TODO
+        List all available metrics for each VM, and fetch time series data for
+        all those metrics. The timespan depends on the schedule of the timer
+        that triggers the function.
         """
 
         # Generate the timespan config used for getting the configs.
         timespan_str = await get_timespan()
+        interval = "PT1M"
 
         self._reset_state()
         self.buf.write("[")
+        self.vm_metrics_metadata = []
         for vm_resource_id in await self._list_vms():
+            # Metadata to append at the end of Observe request.
+            apicall_metadata = {
+                "ResourceId": vm_resource_id,
+                "Cost": 0,
+                "Timespan": timespan_str,
+                "Interval": interval,
+                "StartTimeUtc": datetime.utcnow().isoformat()
+            }
+
+            # Parse the subscription ID from the resource ID string.
             # Format: /subscriptions/{subscription_id}/resourceGroups/{resource_group}/providers/Microsoft.Compute/virtualMachines/{vm_name}
             subscription_id = vm_resource_id.split('/')[2]
             logging.info(
-                f"[VmMetricsHandler] Listing metrics for VM: {vm_resource_id}")
+                f"[VmMetricsHandler] Listing metrics for VM: {vm_resource_id} ({subscription_id})")
 
             # Fetch the names of all available metrics for this VM resource.
             client = MonitorManagementClient(
@@ -70,37 +79,46 @@ class VmMetricsHandler(BaseHandler):
             for metric in client.metric_definitions.list(vm_resource_id):
                 metric_names.append(metric.name.value)
 
-            # List metrics API only allows up to 20 metrics per call.
+            # Azure's List metrics API only allows up to 20 metrics per GET request.
             metric_batch_size = 20
             batched_metric_names = [metric_names[i:i + metric_batch_size]
                                     for i in range(0, len(metric_names), metric_batch_size)]
+
             for batch in batched_metric_names:
                 metrics_data = client.metrics.list(
                     vm_resource_id,
                     metricnames=','.join(batch),
                     aggregation='average',
-                    interval='PT1M',
+                    interval=interval,
                     timespan=timespan_str,
                 )
-                print(metrics_data.serialize(keep_readonly=True)) # remove me
+                # Break down each metrics to a single observation from the JSON.
                 for value in metrics_data.value:
                     self.buf.write(json.dumps(
                         value.serialize(keep_readonly=True), separators=(',', ':')))
                     self.buf.write(",")
                     self.num_obs += 1
 
+                # Increment the cost for logging purpose.
+                apicall_metadata["Cost"] = apicall_metadata["Cost"] + \
+                    metrics_data.cost
+                apicall_metadata["EndTimeUtc"] = datetime.utcnow().isoformat()
+
+            apicall_metadata["TotalMetrics"] = len(metric_names)
+            self.vm_metrics_metadata.append(apicall_metadata)
+
             # Buffer size is above threshold.
             if self.buf.tell() >= self.max_req_size_byte:
                 await self._wrap_buffer_and_send_request()
                 self._reset_state()
                 self.buf.write("[")
+                self.vm_metrics_metadata = []
 
             logging.info(
                 f"[VmMetricsHandler] {len(metric_names)} Metrics processed for VM: {vm_resource_id}")
 
         if self.num_obs > 0:
             await self._wrap_buffer_and_send_request()
-            self._reset_state()
 
 
 async def get_timespan() -> str:
@@ -125,6 +143,7 @@ async def get_timespan() -> str:
     timespan_str = timespan_begin.strftime(
         "%Y-%m-%dT%H:%M:%SZ") + "/" + timespan_end.strftime("%Y-%m-%dT%H:%M:%SZ")
     return timespan_str
+
 
 async def main(mytimer: func.TimerRequest) -> None:
     # Create a new VM metrics handler, or load it from the cache.
