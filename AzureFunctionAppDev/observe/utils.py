@@ -47,6 +47,7 @@ class BaseHandler:
 
     def _reset_state(self):
         self.event_metadata = None
+        self.vm_metadata = None
         self.num_obs = 0
         self.buf = io.StringIO()
 

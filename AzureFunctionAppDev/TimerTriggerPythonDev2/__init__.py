@@ -3,6 +3,7 @@
 import azure.functions as func
 import json
 import logging
+import os
 
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.monitor import MonitorManagementClient
@@ -50,11 +51,9 @@ class VmMetricsHandler(BaseHandler):
         """
         TODO
         """
-        # 2022-10-20T22:02:23Z/2022-10-20T23:02:23Z
-        timespan_end = datetime.utcnow() - timedelta(minutes=15)
-        timespan_begin = timespan_end - timedelta(minutes=5)
-        timespan_str = timespan_begin.strftime(
-            "%Y-%m-%dT%H:%M:%SZ") + "/" + timespan_end.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        # Generate the timespan config used for getting the configs.
+        timespan_str = await get_timespan()
 
         self._reset_state()
         self.buf.write("[")
@@ -83,6 +82,7 @@ class VmMetricsHandler(BaseHandler):
                     interval='PT1M',
                     timespan=timespan_str,
                 )
+                print(metrics_data.serialize(keep_readonly=True)) # remove me
                 for value in metrics_data.value:
                     self.buf.write(json.dumps(
                         value.serialize(keep_readonly=True), separators=(',', ':')))
@@ -102,6 +102,29 @@ class VmMetricsHandler(BaseHandler):
             await self._wrap_buffer_and_send_request()
             self._reset_state()
 
+
+async def get_timespan() -> str:
+    """
+    Generates the timespan for the query. It is a string with the following
+    format 'startDateTime_ISO/endDateTime_ISO'. For example:
+    '2022-10-20T22:02:23Z/2022-10-20T23:02:23Z'
+    """
+    # Optional environment variable specifying how long we should back in time
+    # so that the metrics are guaranteed to be available, default is 10 min.
+    REWIND_MIN = int(os.getenv("OBSERVE_VM_METRICS_REWIND_MIN") or 10)
+    timespan_end = datetime.utcnow() - timedelta(minutes=REWIND_MIN)
+
+    # Delta is parsed from the crontab schedule, it is the number of minutes
+    # between each run, minimum is 1.
+    # Example: Run once every 5 minutes: '* */5 * * * *'
+    crontab_schedule = os.environ["TimerTriggerPythonDev2_schedule"]
+    min_schedule = crontab_schedule.split(' ')[1]
+    delta = 1 if min_schedule == "*" else int(min_schedule.split('/')[1])
+    timespan_begin = timespan_end - timedelta(minutes=delta)
+
+    timespan_str = timespan_begin.strftime(
+        "%Y-%m-%dT%H:%M:%SZ") + "/" + timespan_end.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return timespan_str
 
 async def main(mytimer: func.TimerRequest) -> None:
     # Create a new VM metrics handler, or load it from the cache.
