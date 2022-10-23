@@ -8,6 +8,8 @@ import logging
 import os
 import requests
 
+from azure.identity import ClientSecretCredential
+from azure.mgmt.resource import SubscriptionClient
 from datetime import datetime
 from requests.adapters import HTTPAdapter
 
@@ -18,16 +20,34 @@ class BaseHandler:
     client.
     """
     def __init__(self):
+        # Required environment variables.
+        try:
+            self.azure_tenant_id = os.environ["AZURE_TENANT_ID"]
+            self.azure_client_id = os.environ["AZURE_CLIENT_ID"]
+            self.azure_client_secret = os.environ["AZURE_CLIENT_SECRET"]
+        except:
+            logging.critical(
+                "[ResourcesHandler] Required ENV_VARS are not set properly")
+            exit(-1)
+
         # Optional environment variable with default value.
         self.max_req_size_byte = int(
             os.getenv("OBSERVE_CLIENT_MAX_REQ_SIZE_BYTE") or 512*1024)
 
+        # Construct Azure credentials.
+        self.azure_credentials = ClientSecretCredential(
+            tenant_id=self.azure_tenant_id,
+            client_id=self.azure_client_id,
+            client_secret=self.azure_client_secret)
+
+        # HTTP client to send data to Observe's collector endpoint.
         self.observe_client = ObserveClient()
         self._reset_state()
         self.source = "Unknown"
 
     def _reset_state(self):
         self.event_metadata = None
+        self.vm_metrics_metadata = None
         self.num_obs = 0
         self.buf = io.StringIO()
 
@@ -73,8 +93,18 @@ class BaseHandler:
                 req_meta["ObserveNumEvents"] = len(
                     self.event_metadata["SystemPropertiesArray"])
 
+        # In case of timer triggered function for VM metrics.
+        if self.vm_metrics_metadata != None and self.source == "VmMetrics":
+            req_meta["AzureVmMetricsSummary"] = self.vm_metrics_metadata
+
         return json.dumps(req_meta, separators=(',', ':'))
 
+    async def _list_subscriptions(self) -> dict:
+        client = SubscriptionClient(self.azure_credentials)
+        subscriptions = []
+        for sub in client.subscriptions.list():
+            subscriptions.append(sub.serialize(keep_readonly=True))
+        return subscriptions
 
 class ObserveClient:
     """

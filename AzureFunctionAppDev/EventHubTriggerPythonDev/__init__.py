@@ -4,7 +4,6 @@ import azure.functions as func
 import json
 import logging
 
-from datetime import datetime
 from observe.utils import BaseHandler
 
 EVENTHUB_HANDLER = None
@@ -56,7 +55,6 @@ class EventHubHandler(BaseHandler):
         if self.num_obs > 0:
             self.event_metadata = event_arr[0].metadata
             await self._wrap_buffer_and_send_request()
-            self._reset_state()
 
         logging.info(f"[EventHubHandler] {len(event_arr)} events processed.")
 
