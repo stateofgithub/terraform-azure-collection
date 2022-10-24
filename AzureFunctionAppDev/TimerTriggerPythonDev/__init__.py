@@ -3,7 +3,6 @@
 import azure.functions as func
 import json
 import logging
-import os
 
 from azure.mgmt.resource import ResourceManagementClient
 from observe.utils import BaseHandler

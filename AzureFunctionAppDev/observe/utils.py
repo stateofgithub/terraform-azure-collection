@@ -19,6 +19,7 @@ class BaseHandler:
     Async base handler class that manages the data buffer and Observe HTTP
     client.
     """
+
     def __init__(self):
         # Required environment variables.
         try:
@@ -82,7 +83,7 @@ class BaseHandler:
         }
 
         # In case of EventHub triggered function.
-        if self.event_metadata != None and self.source == "EventHub":
+        if self.event_metadata is not None and self.source == "EventHub":
             req_meta["AzureEventHubPartitionContext"] = self.event_metadata.get(
                 "PartitionContext", {})
             if "SystemPropertiesArray" not in self.event_metadata:
@@ -94,7 +95,7 @@ class BaseHandler:
                     self.event_metadata["SystemPropertiesArray"])
 
         # In case of timer triggered function for VM metrics.
-        if self.vm_metrics_metadata != None and self.source == "VmMetrics":
+        if self.vm_metrics_metadata is not None and self.source == "VmMetrics":
             req_meta["AzureVmMetricsSummary"] = self.vm_metrics_metadata
 
         return json.dumps(req_meta, separators=(',', ':'))
@@ -105,6 +106,7 @@ class BaseHandler:
         for sub in client.subscriptions.list():
             subscriptions.append(sub.serialize(keep_readonly=True))
         return subscriptions
+
 
 class ObserveClient:
     """
