@@ -29,8 +29,10 @@ class ResourcesHandler(BaseHandler):
             sub_id = subscription["subscriptionId"]
             logging.info(
                 f"[ResourcesHandler] Processing resources for subscription \"{sub_name}\" ({sub_id}).")
-            client = ResourceManagementClient(self.azure_credentials, sub_id)
 
+            client = ResourceManagementClient(self.azure_credentials, sub_id)
+            # Reference for the LIST Resources api:
+            # https://learn.microsoft.com/en-us/rest/api/resources/resources/list
             for resource in client.resources.list(expand='createdTime,changedTime,provisioningState'):
                 self.buf.write(json.dumps(resource.serialize(
                     keep_readonly=True), separators=(',', ':')))
