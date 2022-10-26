@@ -8,6 +8,7 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.containerservice import ContainerServiceClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.sql import SqlManagementClient
+from azure.mgmt.web import WebSiteManagementClient
 from observe.utils import BaseHandler
 
 
@@ -31,17 +32,13 @@ class ResourcesHandler(BaseHandler):
         # Create a client for each of the following services, and call their
         # corresponding APIs to get the full resource information.
 
-        #
         # Microsoft.Compute/virtualMachines
-        #
         compute_client = ComputeManagementClient(
             self.azure_credentials, sub_id)
         vms = compute_client.virtual_machines.list_all()
 
-        #
         # Microsoft.Sql/servers
         # Microsoft.Sql/servers/databases
-        #
         sql_client = SqlManagementClient(self.azure_credentials, sub_id)
         servers_itr = sql_client.servers.list()
         servers = []
@@ -54,21 +51,16 @@ class ResourcesHandler(BaseHandler):
             databases.extend(sql_client.databases.list_by_server(
                 resource_group_name=server_resource_group, server_name=server_name))
 
-        #
         # Microsoft.ContainerService/managedClusters
-        #
         container_service_client = ContainerServiceClient(
             self.azure_credentials, sub_id)
         managed_clusters = container_service_client.managed_clusters.list()
 
-        #
         # Microsoft.Web/serverFarms
-        #
-        # TODO
+        web_client = WebSiteManagementClient(self.azure_credentials, sub_id)
+        server_farms = web_client.app_service_plans.list(detailed=True)
 
-        #
         # Microsoft.Web/sites
-        #
         # TODO
 
         # For everything else, use the following API to fetch their resources.
@@ -87,7 +79,7 @@ class ResourcesHandler(BaseHandler):
             expand=LIST_EXPAND, filter=list_filter)
 
         # Return the concatenated list.
-        return [*vms, *servers, *databases, *managed_clusters, *other_resources]
+        return [*vms, *servers, *databases, *managed_clusters, *server_farms, *other_resources]
 
     async def list_resources(self) -> None:
         """

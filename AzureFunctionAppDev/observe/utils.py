@@ -51,6 +51,7 @@ class BaseHandler:
         self.vm_metrics_metadata = None
         self.num_obs = 0
         self.buf = io.StringIO()
+        self.init_time = datetime.utcnow().isoformat()
 
     async def _wrap_buffer_and_send_request(self) -> None:
         self.buf.write(await self._build_req_metadata_json())
@@ -74,6 +75,7 @@ class BaseHandler:
         req_meta = {
             "ObserveNumObservations": self.num_obs,
             "ObserveTotalSizeBytes": self.buf.tell(),
+            "ObserveInitTimeUtc": self.init_time,
             "ObserveSubmitTimeUtc": datetime.utcnow().isoformat(),
             "AzureSource": self.source
         }

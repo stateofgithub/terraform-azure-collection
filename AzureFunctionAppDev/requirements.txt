@@ -9,4 +9,5 @@ azure-mgmt-compute
 azure-mgmt-monitor
 azure-mgmt-resource
 azure-mgmt-sql
+azure-mgmt-web
 requests
