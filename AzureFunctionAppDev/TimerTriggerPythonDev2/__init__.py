@@ -36,8 +36,7 @@ class VmMetricsHandler(BaseHandler):
                 f"[VmMetricsHandler] Listing VMs for subscription \"{sub_name}\" ({sub_id}).")
 
             client = ResourceManagementClient(self.azure_credentials, sub_id)
-            # Reference for the LIST Resources api:
-            # https://learn.microsoft.com/en-us/rest/api/resources/resources/list
+            # Reference: https://learn.microsoft.com/en-us/rest/api/resources/resources/list
             for vm in client.resources.list(expand=LIST_EXPAND, filter=LIST_FILTER):
                 meta = vm.serialize(keep_readonly=True)
                 if meta["provisioningState"] == "Succeeded":
@@ -79,8 +78,7 @@ class VmMetricsHandler(BaseHandler):
             client = MonitorManagementClient(
                 self.azure_credentials, subscription_id)
             metric_names = []
-            # Reference for the LIST Metric Definition api:
-            # https://learn.microsoft.com/en-us/rest/api/monitor/metric-definitions/list
+            # Reference https://learn.microsoft.com/en-us/rest/api/monitor/metric-definitions/list
             for metric in client.metric_definitions.list(vm_resource_id):
                 metric_names.append(metric.name.value)
 
@@ -90,8 +88,7 @@ class VmMetricsHandler(BaseHandler):
                                     for i in range(0, len(metric_names), metric_batch_size)]
 
             for batch in batched_metric_names:
-                # Reference for the LIST Metrics api:
-                # https://learn.microsoft.com/en-us/rest/api/monitor/metrics/list
+                # Reference https://learn.microsoft.com/en-us/rest/api/monitor/metrics/list
                 metrics_data = client.metrics.list(
                     vm_resource_id,
                     metricnames=','.join(batch),
