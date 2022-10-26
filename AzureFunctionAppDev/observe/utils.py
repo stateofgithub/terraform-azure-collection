@@ -101,8 +101,7 @@ class BaseHandler:
     async def _list_subscriptions(self) -> dict:
         client = SubscriptionClient(self.azure_credentials)
         subscriptions = []
-        # Reference for the LIST Subscriptions api:
-        # https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
+        # Reference https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
         for sub in client.subscriptions.list():
             subscriptions.append(sub.serialize(keep_readonly=True))
         return subscriptions

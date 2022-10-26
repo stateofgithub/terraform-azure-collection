@@ -33,12 +33,15 @@ class ResourcesHandler(BaseHandler):
         # corresponding APIs to get the full resource information.
 
         # Microsoft.Compute/virtualMachines
+        # Reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list-all
         compute_client = ComputeManagementClient(
             self.azure_credentials, sub_id)
         vms = compute_client.virtual_machines.list_all()
 
         # Microsoft.Sql/servers
         # Microsoft.Sql/servers/databases
+        # Reference: https://learn.microsoft.com/en-us/rest/api/sql/2021-11-01/servers/list
+        # Reference: https://learn.microsoft.com/en-us/rest/api/sql/2022-05-01-preview/databases/list-by-server
         sql_client = SqlManagementClient(self.azure_credentials, sub_id)
         servers_itr = sql_client.servers.list()
         servers = []
@@ -52,34 +55,52 @@ class ResourcesHandler(BaseHandler):
                 resource_group_name=server_resource_group, server_name=server_name))
 
         # Microsoft.ContainerService/managedClusters
+        # Reference: https://learn.microsoft.com/en-us/rest/api/aks/managed-clusters/list
         container_service_client = ContainerServiceClient(
             self.azure_credentials, sub_id)
         managed_clusters = container_service_client.managed_clusters.list()
 
-        # Microsoft.Web/serverFarms
+        # Microsoft.Web/serverFarms (externally called App Service Plans)
+        # Reference: https://learn.microsoft.com/en-us/rest/api/appservice/app-service-plans/list
         web_client = WebSiteManagementClient(self.azure_credentials, sub_id)
         server_farms = web_client.app_service_plans.list(detailed=True)
 
-        # Microsoft.Web/sites
-        # TODO
+        # Microsoft.Web/sites (externally called Web Apps / Function Apps)
+        # Microsoft.Web/sites/functions
+        # Reference: https://learn.microsoft.com/en-us/rest/api/appservice/web-apps/list
+        # Reference: https://learn.microsoft.com/en-us/rest/api/appservice/web-apps/list-functions
+        web_sites_itr = web_client.web_apps.list()
+        web_sites = []
+        web_functions = []
+        for w in web_sites_itr:
+            web_sites.append(w)
+            site_name = w.name
+            site_resource_group = w.resource_group
+            web_functions.extend(web_client.web_apps.list_functions(
+                resource_group_name=site_resource_group, name=site_name))
 
         # For everything else, use the following API to fetch their resources.
         resource_client = ResourceManagementClient(
             self.azure_credentials, sub_id)
         # Construct the filter list to exclude the resource types already
         # processed above.
-        exclude_resource_types = ["Microsoft.Sql/servers/databases", "Microsoft.Sql/servers", "Microsoft.Web/serverFarms",
-                                  "Microsoft.Web/sites", "Microsoft.ContainerService/managedClusters", "Microsoft.Compute/virtualMachines"]
+        exclude_resource_types = [
+            "Microsoft.Compute/virtualMachines",
+            "Microsoft.Sql/servers",
+            "Microsoft.Sql/servers/databases",
+            "Microsoft.ContainerService/managedClusters",
+            "Microsoft.Web/serverFarms",
+            "Microsoft.Web/sites",
+            "Microsoft.Web/sites/functions"]
         list_filter = ' and '.join(
             ["resourceType ne '" + r + "'" for r in exclude_resource_types])
 
-        # Reference for the LIST Resources api:
-        # https://learn.microsoft.com/en-us/rest/api/resources/resources/list
+        # Reference: https://learn.microsoft.com/en-us/rest/api/resources/resources/list
         other_resources = resource_client.resources.list(
             expand=LIST_EXPAND, filter=list_filter)
 
         # Return the concatenated list.
-        return [*vms, *servers, *databases, *managed_clusters, *server_farms, *other_resources]
+        return [*vms, *servers, *databases, *managed_clusters, *server_farms, *web_sites, *web_functions, *other_resources]
 
     async def list_resources(self) -> None:
         """
