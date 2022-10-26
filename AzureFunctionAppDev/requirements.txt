@@ -4,6 +4,9 @@
 
 azure-functions
 azure-identity
+azure-mgmt-containerservice
+azure-mgmt-compute
 azure-mgmt-monitor
 azure-mgmt-resource
+azure-mgmt-sql
 requests

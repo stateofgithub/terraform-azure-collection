@@ -13,6 +13,9 @@ from observe.utils import BaseHandler
 
 VM_METRICS_HANDLER = None
 
+# Constant URL parameters for the SDK request.
+LIST_EXPAND = "createdTime,changedTime,provisioningState"
+LIST_FILTER = "resourceType eq 'Microsoft.Compute/virtualMachines'"
 
 class VmMetricsHandler(BaseHandler):
     def __init__(self):
@@ -25,8 +28,6 @@ class VmMetricsHandler(BaseHandler):
         Get the list of resource IDs for all the VMs in all subscriptions.
         The VM must already been provisioned successfully.
         """
-        list_expand = "createdTime,changedTime,provisioningState"
-        list_filter = "resourceType eq 'Microsoft.Compute/virtualMachines'"
         resource_id_arr = []
         for subscription in await self._list_subscriptions():
             sub_name = subscription["displayName"]
@@ -35,7 +36,9 @@ class VmMetricsHandler(BaseHandler):
                 f"[VmMetricsHandler] Listing VMs for subscription \"{sub_name}\" ({sub_id}).")
 
             client = ResourceManagementClient(self.azure_credentials, sub_id)
-            for vm in client.resources.list(expand=list_expand, filter=list_filter):
+            # Reference for the LIST Resources api:
+            # https://learn.microsoft.com/en-us/rest/api/resources/resources/list
+            for vm in client.resources.list(expand=LIST_EXPAND, filter=LIST_FILTER):
                 meta = vm.serialize(keep_readonly=True)
                 if meta["provisioningState"] == "Succeeded":
                     resource_id_arr.append(meta["id"])
@@ -76,6 +79,8 @@ class VmMetricsHandler(BaseHandler):
             client = MonitorManagementClient(
                 self.azure_credentials, subscription_id)
             metric_names = []
+            # Reference for the LIST Metric Definition api:
+            # https://learn.microsoft.com/en-us/rest/api/monitor/metric-definitions/list
             for metric in client.metric_definitions.list(vm_resource_id):
                 metric_names.append(metric.name.value)
 
@@ -85,6 +90,8 @@ class VmMetricsHandler(BaseHandler):
                                     for i in range(0, len(metric_names), metric_batch_size)]
 
             for batch in batched_metric_names:
+                # Reference for the LIST Metrics api:
+                # https://learn.microsoft.com/en-us/rest/api/monitor/metrics/list
                 metrics_data = client.metrics.list(
                     vm_resource_id,
                     metricnames=','.join(batch),
