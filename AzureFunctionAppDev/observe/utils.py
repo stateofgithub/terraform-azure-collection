@@ -53,18 +53,14 @@ class BaseHandler:
         self.buf = io.StringIO()
 
     async def _wrap_buffer_and_send_request(self) -> None:
-        timestamp = datetime.utcnow()
-        self.buf.write(await self._build_req_metadata_json(timestamp))
+        self.buf.write(await self._build_req_metadata_json())
         self.buf.write("]")
 
-        extra = {
-            "source": self.source,
-            "timestamp": timestamp.strftime("%Y%m%d%H%M%S%f"),
-        }
+        extra = {"source": self.source}
         # Send data to Observe.
         await self.observe_client.send_observations(payload=self.buf.getvalue(), extra=extra)
 
-    async def _build_req_metadata_json(self, timestamp: datetime) -> str:
+    async def _build_req_metadata_json(self) -> str:
         """
         Construct a metadata observation for the current Observe request,
         as the last record in the JSON array.
@@ -77,8 +73,8 @@ class BaseHandler:
 
         req_meta = {
             "ObserveNumObservations": self.num_obs,
-            "ObserveTotalSizeByte": self.buf.tell(),
-            "ObserveSubmitTimeUtc": timestamp.isoformat(),
+            "ObserveTotalSizeBytes": self.buf.tell(),
+            "ObserveSubmitTimeUtc": datetime.utcnow().isoformat(),
             "AzureSource": self.source
         }
 
