@@ -50,8 +50,7 @@ class VmMetricsHandler(BaseHandler):
         all those metrics. The timespan depends on the schedule of the timer
         that triggers the function.
         """
-
-        # Generate the timespan config used for getting the configs.
+        # Used by the request.
         timespan_str = await get_timespan()
         interval = "PT1M"
 

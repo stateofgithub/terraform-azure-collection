@@ -35,7 +35,6 @@ class BaseHandler:
         self.max_req_size_byte = int(
             os.getenv("OBSERVE_CLIENT_MAX_REQ_SIZE_BYTE") or 512*1024)
 
-        # Construct Azure credentials.
         self.azure_credentials = ClientSecretCredential(
             tenant_id=self.azure_tenant_id,
             client_id=self.azure_client_id,
@@ -58,7 +57,6 @@ class BaseHandler:
         self.buf.write("]")
 
         extra = {"source": self.source}
-        # Send data to Observe.
         await self.observe_client.send_observations(payload=self.buf.getvalue(), extra=extra)
 
     async def _build_req_metadata_json(self) -> str:

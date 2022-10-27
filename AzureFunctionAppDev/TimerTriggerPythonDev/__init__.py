@@ -46,7 +46,6 @@ class ResourcesHandler(BaseHandler):
         servers_itr = sql_client.servers.list()
         servers = []
         databases = []
-        # Iterate through all the SQL servers and list all the databases in each server.
         for s in servers_itr:
             servers.append(s)
             server_name = s.name
@@ -82,8 +81,6 @@ class ResourcesHandler(BaseHandler):
         # For everything else, use the following API to fetch their resources.
         resource_client = ResourceManagementClient(
             self.azure_credentials, sub_id)
-        # Construct the filter list to exclude the resource types already
-        # processed above.
         exclude_resource_types = [
             "Microsoft.Compute/virtualMachines",
             "Microsoft.Sql/servers",
@@ -99,7 +96,6 @@ class ResourcesHandler(BaseHandler):
         other_resources = resource_client.resources.list(
             expand=LIST_EXPAND, filter=list_filter)
 
-        # Return the concatenated list.
         return [*vms, *servers, *databases, *managed_clusters, *server_farms, *web_sites, *web_functions, *other_resources]
 
     async def list_resources(self) -> None:
