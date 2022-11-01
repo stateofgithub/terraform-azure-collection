@@ -16,7 +16,6 @@ RESOURCES_HANDLER = None
 
 # Constant URL parameters for the SDK request.
 LIST_EXPAND = "createdTime,changedTime,provisioningState"
-LIST_FILTER = "resourceType eq 'Microsoft.Compute/virtualMachines'"
 
 
 class ResourcesHandler(BaseHandler):
@@ -78,17 +77,22 @@ class ResourcesHandler(BaseHandler):
             web_functions.extend(web_client.web_apps.list_functions(
                 resource_group_name=site_resource_group, name=site_name))
 
-        # For everything else, use the following API to fetch their resources.
+        # # For everything else, use the following API to fetch their resources.
         resource_client = ResourceManagementClient(
             self.azure_credentials, sub_id)
+
+        # Currently our exclude list is empty and we allow duplicated info
+        # for some of the services. This is because we need information fro
+        # both list APIs.
         exclude_resource_types = [
-            "Microsoft.Compute/virtualMachines",
-            "Microsoft.Sql/servers",
-            "Microsoft.Sql/servers/databases",
-            "Microsoft.ContainerService/managedClusters",
-            "Microsoft.Web/serverFarms",
-            "Microsoft.Web/sites",
-            "Microsoft.Web/sites/functions"]
+            #     "Microsoft.Compute/virtualMachines",
+            #     "Microsoft.Sql/servers",
+            #     "Microsoft.Sql/servers/databases",
+            #     "Microsoft.ContainerService/managedClusters",
+            #     "Microsoft.Web/serverFarms",
+            #     "Microsoft.Web/sites",
+            #     "Microsoft.Web/sites/functions"
+        ]
         list_filter = ' and '.join(
             ["resourceType ne '" + r + "'" for r in exclude_resource_types])
 

@@ -17,6 +17,7 @@ VM_METRICS_HANDLER = None
 LIST_EXPAND = "createdTime,changedTime,provisioningState"
 LIST_FILTER = "resourceType eq 'Microsoft.Compute/virtualMachines'"
 
+
 class VmMetricsHandler(BaseHandler):
     def __init__(self):
         super().__init__()
