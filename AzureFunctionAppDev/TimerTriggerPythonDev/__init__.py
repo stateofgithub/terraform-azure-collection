@@ -6,6 +6,7 @@ import logging
 
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.containerservice import ContainerServiceClient
+from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.sql import SqlManagementClient
 from azure.mgmt.web import WebSiteManagementClient
@@ -33,13 +34,16 @@ class ResourcesHandler(BaseHandler):
 
         # Microsoft.Compute/virtualMachines
         # Reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list-all
+        # Microsoft.Compute/disks
+        # Reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list
         compute_client = ComputeManagementClient(
             self.azure_credentials, sub_id)
         vms = compute_client.virtual_machines.list_all()
+        disks = compute_client.disks.list()
 
         # Microsoft.Sql/servers
-        # Microsoft.Sql/servers/databases
         # Reference: https://learn.microsoft.com/en-us/rest/api/sql/2021-11-01/servers/list
+        # Microsoft.Sql/servers/databases
         # Reference: https://learn.microsoft.com/en-us/rest/api/sql/2022-05-01-preview/databases/list-by-server
         sql_client = SqlManagementClient(self.azure_credentials, sub_id)
         servers_itr = sql_client.servers.list()
@@ -64,8 +68,8 @@ class ResourcesHandler(BaseHandler):
         server_farms = web_client.app_service_plans.list(detailed=True)
 
         # Microsoft.Web/sites (externally called Web Apps / Function Apps)
-        # Microsoft.Web/sites/functions
         # Reference: https://learn.microsoft.com/en-us/rest/api/appservice/web-apps/list
+        # Microsoft.Web/sites/functions
         # Reference: https://learn.microsoft.com/en-us/rest/api/appservice/web-apps/list-functions
         web_sites_itr = web_client.web_apps.list()
         web_sites = []
@@ -77,6 +81,12 @@ class ResourcesHandler(BaseHandler):
             web_functions.extend(web_client.web_apps.list_functions(
                 resource_group_name=site_resource_group, name=site_name))
 
+        # Microsoft.Network/networkInterfaces
+        # Reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
+        network_client = NetworkManagementClient(
+            self.azure_credentials, sub_id)
+        network_interfaces = network_client.network_interfaces.list_all()
+
         # # For everything else, use the following API to fetch their resources.
         resource_client = ResourceManagementClient(
             self.azure_credentials, sub_id)
@@ -86,12 +96,14 @@ class ResourcesHandler(BaseHandler):
         # both list APIs.
         exclude_resource_types = [
             #     "Microsoft.Compute/virtualMachines",
+            #     "Microsoft.Compute/disks"
             #     "Microsoft.Sql/servers",
             #     "Microsoft.Sql/servers/databases",
             #     "Microsoft.ContainerService/managedClusters",
             #     "Microsoft.Web/serverFarms",
             #     "Microsoft.Web/sites",
             #     "Microsoft.Web/sites/functions"
+            #     "Microsoft.Network/networkInterfaces"
         ]
         list_filter = ' and '.join(
             ["resourceType ne '" + r + "'" for r in exclude_resource_types])
@@ -100,7 +112,7 @@ class ResourcesHandler(BaseHandler):
         other_resources = resource_client.resources.list(
             expand=LIST_EXPAND, filter=list_filter)
 
-        return [*vms, *servers, *databases, *managed_clusters, *server_farms, *web_sites, *web_functions, *other_resources]
+        return [*vms, *disks, *servers, *databases, *managed_clusters, *server_farms, *web_sites, *web_functions, *network_interfaces, *other_resources]
 
     async def list_resources(self) -> None:
         """
