@@ -56,7 +56,7 @@ class VmMetricsHandler(BaseHandler):
         interval = "PT1M"
 
         self._reset_state()
-        self.buf.write("[")
+        is_first_observation = True
         self.vm_metrics_metadata = []
         for vm_resource_id in await self._list_vms():
             # Metadata to append at the end of Observe request.
@@ -98,9 +98,13 @@ class VmMetricsHandler(BaseHandler):
                 )
                 # Break down each metrics to a single observation from the JSON.
                 for value in metrics_data.value:
+                    if is_first_observation is False:
+                        self.buf.write(",")
+                    else:
+                        is_first_observation = False
+
                     self.buf.write(json.dumps(
                         value.serialize(keep_readonly=True), separators=(',', ':')))
-                    self.buf.write(",")
                     self.num_obs += 1
 
                 # Increment the cost for logging purpose.
@@ -115,7 +119,7 @@ class VmMetricsHandler(BaseHandler):
             if self.buf.tell() >= self.max_req_size_byte:
                 await self._wrap_buffer_and_send_request()
                 self._reset_state()
-                self.buf.write("[")
+                is_first_observation = True
                 self.vm_metrics_metadata = []
 
             logging.info(

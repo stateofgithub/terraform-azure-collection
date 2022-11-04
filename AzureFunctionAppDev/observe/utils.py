@@ -34,6 +34,8 @@ class BaseHandler:
         # Optional environment variable with default value.
         self.max_req_size_byte = int(
             os.getenv("OBSERVE_CLIENT_MAX_REQ_SIZE_BYTE") or 512*1024)
+        self.send_req_metadata = bool(
+            os.getenv("OBSERVE_CLIENT_SEND_REQ_METADATA") or True)
 
         self.azure_credentials = ClientSecretCredential(
             tenant_id=self.azure_tenant_id,
@@ -49,11 +51,15 @@ class BaseHandler:
         self.event_metadata = None
         self.vm_metrics_metadata = None
         self.num_obs = 0
-        self.buf = io.StringIO()
         self.init_time = datetime.utcnow().isoformat()
+        self.buf = io.StringIO()
+        self.buf.write("[")
 
     async def _wrap_buffer_and_send_request(self) -> None:
-        self.buf.write(await self._build_req_metadata_json())
+        if self.send_req_metadata is True:
+            self.buf.write(",")
+            self.buf.write(await self._build_req_metadata_json())
+
         self.buf.write("]")
 
         extra = {"source": self.source}

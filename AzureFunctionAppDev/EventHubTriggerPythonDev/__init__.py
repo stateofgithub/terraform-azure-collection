@@ -31,7 +31,7 @@ class EventHubHandler(BaseHandler):
                 "Event metadata is missing from function invocation")
 
         self._reset_state()
-        self.buf.write("[")
+        is_first_observation = True
         for e in event_arr:
             try:
                 raw_data = json.loads(e.get_body().decode())
@@ -42,15 +42,19 @@ class EventHubHandler(BaseHandler):
             is_json_list = ("records" in raw_data and type(
                 raw_data["records"]) is list)
             for r in raw_data["records"] if is_json_list else [raw_data]:
+                if is_first_observation is False:
+                    self.buf.write(",")
+                else:
+                    is_first_observation = False
+
                 self.buf.write(json.dumps(r, separators=(',', ':')))
-                self.buf.write(",")
                 self.num_obs += 1
                 # Buffer size is above threshold.
                 if self.buf.tell() >= self.max_req_size_byte:
                     self.event_metadata = event_arr[0].metadata
                     await self._wrap_buffer_and_send_request()
                     self._reset_state()
-                    self.buf.write("[")
+                    is_first_observation = True
 
         if self.num_obs > 0:
             self.event_metadata = event_arr[0].metadata
