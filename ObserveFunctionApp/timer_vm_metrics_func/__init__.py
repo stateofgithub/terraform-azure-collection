@@ -143,7 +143,7 @@ async def get_timespan() -> str:
     # Delta is parsed from the crontab schedule, it is the number of minutes
     # between each run, minimum is 1.
     # Example: Run once every 5 minutes: '* */5 * * * *'
-    crontab_schedule = os.environ["TimerTriggerPythonDev2_schedule"]
+    crontab_schedule = os.environ["timer_vm_metrics_func_schedule"]
     min_schedule = crontab_schedule.split(' ')[1]
     delta = 1 if min_schedule == "*" else int(min_schedule.split('/')[1])
     timespan_begin = timespan_end - timedelta(minutes=delta)

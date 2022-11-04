@@ -79,7 +79,7 @@ resource "local_file" "eventhub_function_config" {
     eventHubName = azurerm_eventhub.observe_eventhub.name
     connection = "EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION"
   })
-  filename = "${path.module}/ObserveFunctionApp/EventHubTriggerPythonDev/function.json"
+  filename = "${path.module}/ObserveFunctionApp/event_hub_telemetry_func/function.json"
 }
 
 resource "local_file" "resource_management_function_config" {
@@ -87,7 +87,7 @@ resource "local_file" "resource_management_function_config" {
     eventHubName = azurerm_eventhub.observe_eventhub.name
     schedule = "TIMER_TRIGGER_FUNCTION_SCHEDULE"
   })
-  filename = "${path.module}/ObserveFunctionApp/TimerTriggerPythonDev/function.json"
+  filename = "${path.module}/ObserveFunctionApp/timer_resources_fun/function.json"
 }
 
 resource "azurerm_storage_blob" "observe_collection_blob" {
