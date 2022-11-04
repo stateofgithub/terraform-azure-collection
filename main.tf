@@ -70,7 +70,7 @@ data "archive_file" "observe_collection_function" {
     local_file.function_config
   ]
   type        = "zip"
-  source_dir  = "./AzureFunctionAppDev/"
+  source_dir  = "./ObserveFunctionApp/"
   output_path = "./observe_collection.zip"
 }
 
@@ -79,7 +79,7 @@ resource "local_file" "eventhub_function_config" {
     eventHubName = azurerm_eventhub.observe_eventhub.name
     connection = "EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION"
   })
-  filename = "${path.module}/AzureFunctionAppDev/EventHubTriggerPythonDev/function.json"
+  filename = "${path.module}/ObserveFunctionApp/EventHubTriggerPythonDev/function.json"
 }
 
 resource "local_file" "resource_management_function_config" {
@@ -87,7 +87,7 @@ resource "local_file" "resource_management_function_config" {
     eventHubName = azurerm_eventhub.observe_eventhub.name
     schedule = "TIMER_TRIGGER_FUNCTION_SCHEDULE"
   })
-  filename = "${path.module}/AzureFunctionAppDev/TimerTriggerPythonDev/function.json"
+  filename = "${path.module}/ObserveFunctionApp/TimerTriggerPythonDev/function.json"
 }
 
 resource "azurerm_storage_blob" "observe_collection_blob" {
@@ -133,12 +133,12 @@ resource "azurerm_linux_function_app" "observe_function_app" {
 
 locals {
     publish_code_command = "az webapp deployment source config-zip --resource-group ${azurerm_resource_group.observe_resource_group.name} --name ${azurerm_linux_function_app.observe_function_app.name} --src ${data.archive_file.observe_collection_function.output_path}"
-    pip_install_command  =  "pip install --target='./AzureFunctionAppDev/.python_packages/lib/site-packages' -r ./AzureFunctionAppDev/requirements.txt"
+    pip_install_command  =  "pip install --target='./ObserveFunctionApp/.python_packages/lib/site-packages' -r ./ObserveFunctionApp/requirements.txt"
 }
 
 resource "null_resource" "pip" {
   triggers = {
-    requirements_md5 = "${filemd5("${path.module}/AzureFunctionAppDev/requirements.txt")}"
+    requirements_md5 = "${filemd5("${path.module}/ObserveFunctionApp/requirements.txt")}"
   }
   provisioner "local-exec" {
     command = local.pip_install_command
