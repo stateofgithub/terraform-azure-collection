@@ -120,7 +120,7 @@ class ResourcesHandler(BaseHandler):
         information for each of the subscription.
         """
         self._reset_state()
-        self.buf.write("[")
+        is_first_observation = True
         for subscription in await self._list_subscriptions():
             sub_name = subscription["displayName"]
             sub_id = subscription["subscriptionId"]
@@ -129,15 +129,19 @@ class ResourcesHandler(BaseHandler):
 
             resources_list = await self._get_resources_in_subscription(sub_id)
             for resource in resources_list:
+                if is_first_observation is False:
+                    self.buf.write(",")
+                else:
+                    is_first_observation = False
+
                 self.buf.write(json.dumps(resource.serialize(
                     keep_readonly=True), separators=(',', ':')))
-                self.buf.write(",")
                 self.num_obs += 1
                 # Buffer size is above threshold.
                 if self.buf.tell() >= self.max_req_size_byte:
                     await self._wrap_buffer_and_send_request()
                     self._reset_state()
-                    self.buf.write("[")
+                    is_first_observation = True
 
             logging.info(
                 f"[ResourcesHandler] Resources processed for subscription \"{sub_name}\" ({sub_id}).")
