@@ -83,9 +83,12 @@ class ResourcesHandler(BaseHandler):
 
         # Microsoft.Network/networkInterfaces
         # Reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
+        # Microsoft.Network/publicIPAddresses
+        # Reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/public-ip-addresses/list-all
         network_client = NetworkManagementClient(
             self.azure_credentials, sub_id)
         network_interfaces = network_client.network_interfaces.list_all()
+        public_ip_addresses = network_client.public_ip_addresses.list_all()
 
         # # For everything else, use the following API to fetch their resources.
         resource_client = ResourceManagementClient(
@@ -104,6 +107,7 @@ class ResourcesHandler(BaseHandler):
             #     "Microsoft.Web/sites",
             #     "Microsoft.Web/sites/functions"
             #     "Microsoft.Network/networkInterfaces"
+            #     "Microsoft.Network/publicIPAddresses"
         ]
         list_filter = ' and '.join(
             ["resourceType ne '" + r + "'" for r in exclude_resource_types])
@@ -112,7 +116,7 @@ class ResourcesHandler(BaseHandler):
         other_resources = resource_client.resources.list(
             expand=LIST_EXPAND, filter=list_filter)
 
-        return [*vms, *disks, *servers, *databases, *managed_clusters, *server_farms, *web_sites, *web_functions, *network_interfaces, *other_resources]
+        return [*vms, *disks, *servers, *databases, *managed_clusters, *server_farms, *web_sites, *web_functions, *network_interfaces, *public_ip_addresses, *other_resources]
 
     async def list_resources(self) -> None:
         """
