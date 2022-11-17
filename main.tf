@@ -1,13 +1,20 @@
-### TODO:
-#   - set up service insights automatically
-#   - break out into separate files to make more readable
-#   - automate configuring resources sending data to event hub
-#   - do we still need a storage blob if we are deploying through zip?
+data "azuread_client_config" "current" { }
+
 
 resource "azurerm_resource_group" "observe_resource_group" {
   name     = var.resource_group_name
   location = "East US"
 }
+
+resource "azuread_application" "observe_app_registration" {
+  display_name = "observe"
+  owners = [data.azuread_client_config.current.object_id]
+}
+
+resource "azuread_application_password" "observe_password" {
+  application_object_id = azuread_application.observe_app_registration.object_id
+}
+
 
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   name                = var.eventhub_namespace
@@ -15,8 +22,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Basic"
 
-  # zone_redundant = true
-  capacity            = 1
+  capacity            = 4
 
   tags = {
     created_by = "Observe Terraform"
@@ -46,7 +52,7 @@ resource "azurerm_service_plan" "observe_service_plan" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
-  sku_name            = "S1"
+  sku_name            = "EP1"
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
@@ -64,41 +70,30 @@ resource "azurerm_storage_container" "observe_storage_container" {
 }
 
 data "archive_file" "observe_collection_function" {
-    # depends_on = [local_file.function_config]
   depends_on = [
     null_resource.pip,
-    local_file.function_config
+    local_file.eh_utils,
+    local_file.resources_utils,
+    local_file.vm_utils
   ]
   type        = "zip"
   source_dir  = "./ObserveFunctionApp/"
   output_path = "./observe_collection.zip"
 }
 
-resource "local_file" "eventhub_function_config" {
-  content = templatefile("${path.module}/eventhub_function.tpl", {
-    eventHubName = azurerm_eventhub.observe_eventhub.name
-    connection = "EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION"
-  })
-  filename = "${path.module}/ObserveFunctionApp/event_hub_telemetry_func/function.json"
+resource "local_file" "eh_utils" {
+  source = "${path.module}/ObserveFunctionApp/observe/utils.py"
+  filename = "${path.module}/ObserveFunctionApp/event_hub_telemetry_func/utils.py"
 }
 
-resource "local_file" "resource_management_function_config" {
-  content = templatefile("${path.module}/resource_management_function.tpl", {
-    eventHubName = azurerm_eventhub.observe_eventhub.name
-    schedule = "TIMER_TRIGGER_FUNCTION_SCHEDULE"
-  })
-  filename = "${path.module}/ObserveFunctionApp/timer_resources_fun/function.json"
+resource "local_file" "resources_utils" {
+  source = "${path.module}/ObserveFunctionApp/observe/utils.py"
+  filename = "${path.module}/ObserveFunctionApp/timer_resources_func/utils.py"
 }
 
-resource "azurerm_storage_blob" "observe_collection_blob" {
-  depends_on = [
-    data.archive_file.observe_collection_function
-  ]
-  name = "observe-${data.archive_file.observe_collection_function.output_base64sha256}-collection.zip"
-  storage_account_name = azurerm_storage_account.observe_storage_account.name
-  storage_container_name = azurerm_storage_container.observe_storage_container.name
-  type = "Block"
-  source = data.archive_file.observe_collection_function.output_path
+resource "local_file" "vm_utils" {
+  source = "${path.module}/ObserveFunctionApp/observe/utils.py"
+  filename = "${path.module}/ObserveFunctionApp/timer_vm_metrics_func/utils.py"
 }
 
 resource "azurerm_linux_function_app" "observe_function_app" {
@@ -116,11 +111,13 @@ resource "azurerm_linux_function_app" "observe_function_app" {
     OBSERVE_DOMAIN = var.observe_domain
     OBSERVE_CUSTOMER = var.observe_customer
     OBSERVE_TOKEN = var.observe_token
-    AZURE_TENANT_ID = var.azure_tenant_id
-    AZURE_CLIENT_ID = var.azure_client_id
-    AZURE_CLIENT_SECRET = var.azure_client_secret
-    TIMER_TRIGGER_FUNCTION_SCHEDULE = var.timer_func_schedule
+    AZURE_TENANT_ID = data.azuread_client_config.current.tenant_id
+    AZURE_CLIENT_ID = azuread_application.observe_app_registration.application_id
+    AZURE_CLIENT_SECRET = azuread_application_password.observe_password.value
+    timer_resources_func_schedule = var.timer_func_schedule
+    timer_vm_metrics_func_schedule = var.timer_func_schedule
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME = var.eventhub_name
+    # APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.application_insights.instrumentation_key
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
   }
 
@@ -133,7 +130,7 @@ resource "azurerm_linux_function_app" "observe_function_app" {
 
 locals {
     publish_code_command = "az webapp deployment source config-zip --resource-group ${azurerm_resource_group.observe_resource_group.name} --name ${azurerm_linux_function_app.observe_function_app.name} --src ${data.archive_file.observe_collection_function.output_path}"
-    pip_install_command  =  "pip install --target='./ObserveFunctionApp/.python_packages/lib/site-packages' -r ./ObserveFunctionApp/requirements.txt"
+    pip_install_command  =  "pip install --target='./ObserveFunctionApp/.python_packages/lib/site-packages' -r ./ObserveFunctionApp/requirements.txt --platform manylinux1_x86_64 --only-binary=:all:"
 }
 
 resource "null_resource" "pip" {
@@ -158,4 +155,3 @@ resource "null_resource" "function_app_publish" {
     publish_code_command = local.publish_code_command
   }
 }
-

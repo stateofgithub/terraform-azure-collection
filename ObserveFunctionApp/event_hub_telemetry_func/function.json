@@ -5,8 +5,8 @@
       "type": "eventHubTrigger",
       "name": "event",
       "direction": "in",
-      "eventHubName": "%event_hub_telemetry_func_eventHubName%",
-      "connection": "%event_hub_telemetry_func_connection%",
+      "eventHubName": "%EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME%",
+      "connection": "EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION",
       "cardinality": "many",
       "consumerGroup": "$Default"
     }
