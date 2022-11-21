@@ -126,12 +126,16 @@ class ResourcesHandler(BaseHandler):
         self._reset_state()
         is_first_observation = True
         for subscription in await self._list_subscriptions():
-            sub_name = subscription["displayName"]
-            sub_id = subscription["subscriptionId"]
+            sub_serialized = subscription.serialize(keep_readonly=True)
+            sub_name = sub_serialized["displayName"]
+            sub_id = sub_serialized["subscriptionId"]
             logging.info(
                 f"[ResourcesHandler] Processing resources for subscription \"{sub_name}\" ({sub_id}).")
 
             resources_list = await self._get_resources_in_subscription(sub_id)
+            # append the subscription itself.
+            resources_list.append(subscription)
+
             for resource in resources_list:
                 if is_first_observation is False:
                     self.buf.write(",")
