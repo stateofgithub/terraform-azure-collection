@@ -31,8 +31,9 @@ class VmMetricsHandler(BaseHandler):
         """
         resource_id_arr = []
         for subscription in await self._list_subscriptions():
-            sub_name = subscription["displayName"]
-            sub_id = subscription["subscriptionId"]
+            sub_serialized = subscription.serialize(keep_readonly=True)
+            sub_name = sub_serialized["displayName"]
+            sub_id = sub_serialized["subscriptionId"]
             logging.info(
                 f"[VmMetricsHandler] Listing VMs for subscription \"{sub_name}\" ({sub_id}).")
 

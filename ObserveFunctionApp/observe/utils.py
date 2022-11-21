@@ -102,13 +102,11 @@ class BaseHandler:
 
         return json.dumps(req_meta, separators=(',', ':'))
 
-    async def _list_subscriptions(self) -> dict:
+    async def _list_subscriptions(self) -> list:
         client = SubscriptionClient(self.azure_credentials)
         subscriptions = []
         # Reference https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
-        for sub in client.subscriptions.list():
-            subscriptions.append(sub.serialize(keep_readonly=True))
-        return subscriptions
+        return client.subscriptions.list()
 
 
 class ObserveClient:
