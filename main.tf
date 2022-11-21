@@ -3,7 +3,7 @@ data "azuread_client_config" "current" { }
 
 resource "azurerm_resource_group" "observe_resource_group" {
   name     = var.resource_group_name
-  location = "East US"
+  location = var.location
 }
 
 resource "azuread_application" "observe_app_registration" {
@@ -96,8 +96,8 @@ resource "local_file" "vm_utils" {
   filename = "${path.module}/ObserveFunctionApp/timer_vm_metrics_func/utils.py"
 }
 
-resource "azurerm_linux_function_app" "observe_function_app" {
-  name                = "observe-function-collection"
+resource "azurerm_linux_function_app" "observe_collect_function" {
+  name                = "observe-collection-${var.observe_customer}-${azurerm_resource_group.observe_resource_group.location}"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   service_plan_id     = azurerm_service_plan.observe_service_plan.id
@@ -115,7 +115,7 @@ resource "azurerm_linux_function_app" "observe_function_app" {
     AZURE_CLIENT_ID = azuread_application.observe_app_registration.application_id
     AZURE_CLIENT_SECRET = azuread_application_password.observe_password.value
     timer_resources_func_schedule = var.timer_func_schedule
-    timer_vm_metrics_func_schedule = var.timer_func_schedule
+    timer_vm_metrics_func_schedule = var.timer_func_schedule_vm
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME = var.eventhub_name
     # APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.application_insights.instrumentation_key
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
@@ -129,7 +129,7 @@ resource "azurerm_linux_function_app" "observe_function_app" {
 }
 
 locals {
-    publish_code_command = "az webapp deployment source config-zip --resource-group ${azurerm_resource_group.observe_resource_group.name} --name ${azurerm_linux_function_app.observe_function_app.name} --src ${data.archive_file.observe_collection_function.output_path}"
+    publish_code_command = "az webapp deployment source config-zip --resource-group ${azurerm_resource_group.observe_resource_group.name} --name ${azurerm_linux_function_app.observe_collect_function.name} --src ${data.archive_file.observe_collection_function.output_path}"
     pip_install_command  =  "pip install --target='./ObserveFunctionApp/.python_packages/lib/site-packages' -r ./ObserveFunctionApp/requirements.txt --platform manylinux1_x86_64 --only-binary=:all:"
 }
 

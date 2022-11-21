@@ -48,3 +48,13 @@ variable "timer_func_schedule" {
   type        = string
   description = "Eventhub name to use for function"
 }
+
+variable "timer_func_schedule_vm" {
+  type        = string
+  description = "Eventhub name to use for function"
+}
+
+variable "location" {
+  type        = string
+  description = "Eventhub name to use for function"
+}
