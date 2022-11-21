@@ -1,11 +1,6 @@
 data "azuread_client_config" "current" { }
 
 
-resource "azurerm_resource_group" "observe_resource_group" {
-  name     = var.resource_group_name
-  location = var.location
-}
-
 resource "azuread_application" "observe_app_registration" {
   display_name = "observe"
   owners = [data.azuread_client_config.current.object_id]
@@ -15,6 +10,10 @@ resource "azuread_application_password" "observe_password" {
   application_object_id = azuread_application.observe_app_registration.object_id
 }
 
+resource "azurerm_resource_group" "observe_resource_group" {
+  name     = var.resource_group_name
+  location = var.location
+}
 
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   name                = var.eventhub_namespace
@@ -106,6 +105,7 @@ resource "azurerm_linux_function_app" "observe_collect_function" {
   storage_account_access_key = azurerm_storage_account.observe_storage_account.primary_access_key
 
   app_settings = {
+    AZURE_REGION= azurerm_resource_group.location
     WEBSITE_RUN_FROM_PACKAGE = 1
     AzureWebJobsDisableHomepage = true
     OBSERVE_DOMAIN = var.observe_domain
