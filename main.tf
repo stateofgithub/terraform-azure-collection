@@ -62,7 +62,7 @@ resource "azurerm_service_plan" "observe_service_plan" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
-  sku_name            = "EP1"
+  sku_name            = "Y1"
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
@@ -79,32 +79,32 @@ resource "azurerm_storage_container" "observe_storage_container" {
   container_access_type = "private"
 }
 
-data "archive_file" "observe_collection_function" {
-  depends_on = [
-    null_resource.pip,
-    local_file.eh_utils,
-    local_file.resources_utils,
-    local_file.vm_utils
-  ]
-  type        = "zip"
-  source_dir  = "./ObserveFunctionApp/"
-  output_path = "./observe_collection.zip"
-}
+# data "archive_file" "observe_collection_function" {
+#   depends_on = [
+#     null_resource.pip,
+#     local_file.eh_utils,
+#     local_file.resources_utils,
+#     local_file.vm_utils
+#   ]
+#   type        = "zip"
+#   source_dir  = "./ObserveFunctionApp/"
+#   output_path = "./observe_collection.zip"
+# }
 
-resource "local_file" "eh_utils" {
-  source = "${path.module}/ObserveFunctionApp/observe/utils.py"
-  filename = "${path.module}/ObserveFunctionApp/event_hub_telemetry_func/utils.py"
-}
+# resource "local_file" "eh_utils" {
+#   source = "${path.module}/ObserveFunctionApp/observe/utils.py"
+#   filename = "${path.module}/ObserveFunctionApp/event_hub_telemetry_func/utils.py"
+# }
 
-resource "local_file" "resources_utils" {
-  source = "${path.module}/ObserveFunctionApp/observe/utils.py"
-  filename = "${path.module}/ObserveFunctionApp/timer_resources_func/utils.py"
-}
+# resource "local_file" "resources_utils" {
+#   source = "${path.module}/ObserveFunctionApp/observe/utils.py"
+#   filename = "${path.module}/ObserveFunctionApp/timer_resources_func/utils.py"
+# }
 
-resource "local_file" "vm_utils" {
-  source = "${path.module}/ObserveFunctionApp/observe/utils.py"
-  filename = "${path.module}/ObserveFunctionApp/timer_vm_metrics_func/utils.py"
-}
+# resource "local_file" "vm_utils" {
+#   source = "${path.module}/ObserveFunctionApp/observe/utils.py"
+#   filename = "${path.module}/ObserveFunctionApp/timer_vm_metrics_func/utils.py"
+# }
 
 resource "azurerm_linux_function_app" "observe_collect_function" {
   name                = "observe-collection-${var.observe_customer}-${azurerm_resource_group.observe_resource_group.location}"
@@ -139,29 +139,30 @@ resource "azurerm_linux_function_app" "observe_collect_function" {
 }
 
 locals {
-    publish_code_command = "az webapp deployment source config-zip --resource-group ${azurerm_resource_group.observe_resource_group.name} --name ${azurerm_linux_function_app.observe_collect_function.name} --src ${data.archive_file.observe_collection_function.output_path}"
-    pip_install_command  =  "pip install --target='./ObserveFunctionApp/.python_packages/lib/site-packages' -r ./ObserveFunctionApp/requirements.txt --platform manylinux1_x86_64 --only-binary=:all:"
+    publish_code_command = "cd ObserveFunctionApp && func azure functionapp publish ${azurerm_linux_function_app.observe_collect_function.name}"
+    # pip_install_command  =  "pip install --target='./ObserveFunctionApp/.python_packages/lib/site-packages' -r ./ObserveFunctionApp/requirements.txt --platform manylinux1_x86_64 --only-binary=:all:"
 }
 
-resource "null_resource" "pip" {
-  triggers = {
-    requirements_md5 = "${filemd5("${path.module}/ObserveFunctionApp/requirements.txt")}"
-  }
-  provisioner "local-exec" {
-    command = local.pip_install_command
-  }
-}
+# resource "null_resource" "pip" {
+#   triggers = {
+#     requirements_md5 = "${filemd5("${path.module}/ObserveFunctionApp/requirements.txt")}"
+#   }
+#   provisioner "local-exec" {
+#     command = local.pip_install_command
+#   }
+# }
 
 resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
     command = local.publish_code_command
   }
   depends_on = [
-    local.publish_code_command
+    local.publish_code_command,
+    azurerm_linux_function_app.observe_collect_function
     ]
 
   triggers = {
-    input_json = data.archive_file.observe_collection_function.output_md5 //only refresh if collections changed
+    # input_json = data.archive_file.observe_collection_function.output_md5 //only refresh if collections changed
     publish_code_command = local.publish_code_command
   }
 }
