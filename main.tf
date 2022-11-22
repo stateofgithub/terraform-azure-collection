@@ -1,10 +1,6 @@
 data "azuread_client_config" "current" { }
 
-
-resource "azurerm_resource_group" "observe_resource_group" {
-  name     = var.resource_group_name
-  location = var.location
-}
+data "azurerm_subscription" "primary" { }
 
 resource "azuread_application" "observe_app_registration" {
   display_name = "observe"
@@ -15,6 +11,20 @@ resource "azuread_application_password" "observe_password" {
   application_object_id = azuread_application.observe_app_registration.object_id
 }
 
+resource "azuread_service_principal" "observe_service_principal" {
+  application_id = azuread_application.observe_app_registration.application_id
+}
+
+resource "azurerm_role_assignment" "observe_role_assignment" {
+  scope                = data.azurerm_subscription.primary.id
+  role_definition_name = "Monitoring Reader"
+  principal_id         = azuread_service_principal.observe_service_principal.object_id
+}
+
+resource "azurerm_resource_group" "observe_resource_group" {
+  name     = var.resource_group_name
+  location = var.location
+}
 
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   name                = var.eventhub_namespace
