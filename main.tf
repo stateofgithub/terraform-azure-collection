@@ -1,20 +1,30 @@
+# Obtains current client config from az login, allowing terraform to run.
 data "azuread_client_config" "current" { }
 
+# Creates the alias of your Subscription to be used for association below.
 data "azurerm_subscription" "primary" { }
+
+# Registers a required Application in Azure Active Directory
+# It's essentially a service that assigns the user as the owner of the application.
+# The application inherits the credentials of the user who ran terraform.  
+#   Note: some users may want to use a service account instead.
 
 resource "azuread_application" "observe_app_registration" {
   display_name = "observe"
   owners = [data.azuread_client_config.current.object_id]
 }
 
+# Creates an auth token that is used by the app to call APIs.
 resource "azuread_application_password" "observe_password" {
   application_object_id = azuread_application.observe_app_registration.object_id
 }
 
+# Creates a Service "Principal" for the "observe" app.
 resource "azuread_service_principal" "observe_service_principal" {
   application_id = azuread_application.observe_app_registration.application_id
 }
 
+# Assigns the created service principal a role in current Azure Subscription.
 resource "azurerm_role_assignment" "observe_role_assignment" {
   scope                = data.azurerm_subscription.primary.id
   role_definition_name = "Monitoring Reader"
@@ -31,7 +41,6 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Basic"
-
   capacity            = 4
 
   tags = {
@@ -79,33 +88,6 @@ resource "azurerm_storage_container" "observe_storage_container" {
   container_access_type = "private"
 }
 
-# data "archive_file" "observe_collection_function" {
-#   depends_on = [
-#     null_resource.pip,
-#     local_file.eh_utils,
-#     local_file.resources_utils,
-#     local_file.vm_utils
-#   ]
-#   type        = "zip"
-#   source_dir  = "./ObserveFunctionApp/"
-#   output_path = "./observe_collection.zip"
-# }
-
-# resource "local_file" "eh_utils" {
-#   source = "${path.module}/ObserveFunctionApp/observe/utils.py"
-#   filename = "${path.module}/ObserveFunctionApp/event_hub_telemetry_func/utils.py"
-# }
-
-# resource "local_file" "resources_utils" {
-#   source = "${path.module}/ObserveFunctionApp/observe/utils.py"
-#   filename = "${path.module}/ObserveFunctionApp/timer_resources_func/utils.py"
-# }
-
-# resource "local_file" "vm_utils" {
-#   source = "${path.module}/ObserveFunctionApp/observe/utils.py"
-#   filename = "${path.module}/ObserveFunctionApp/timer_vm_metrics_func/utils.py"
-# }
-
 resource "azurerm_linux_function_app" "observe_collect_function" {
   name                = "observe-collection-${var.observe_customer}-${azurerm_resource_group.observe_resource_group.location}"
   location            = azurerm_resource_group.observe_resource_group.location
@@ -127,7 +109,6 @@ resource "azurerm_linux_function_app" "observe_collect_function" {
     timer_resources_func_schedule = var.timer_func_schedule
     timer_vm_metrics_func_schedule = var.timer_func_schedule_vm
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME = var.eventhub_name
-    # APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.application_insights.instrumentation_key
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
   }
 
@@ -138,19 +119,12 @@ resource "azurerm_linux_function_app" "observe_collect_function" {
   }
 }
 
+# NOTE: Azure Functions Core Tools must be installed locally
+# https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v4%2Cmacos%2Ccsharp%2Cportal%2Cbash#install-the-azure-functions-core-tools
 locals {
     publish_code_command = "cd ObserveFunctionApp && func azure functionapp publish ${azurerm_linux_function_app.observe_collect_function.name}"
     # pip_install_command  =  "pip install --target='./ObserveFunctionApp/.python_packages/lib/site-packages' -r ./ObserveFunctionApp/requirements.txt --platform manylinux1_x86_64 --only-binary=:all:"
 }
-
-# resource "null_resource" "pip" {
-#   triggers = {
-#     requirements_md5 = "${filemd5("${path.module}/ObserveFunctionApp/requirements.txt")}"
-#   }
-#   provisioner "local-exec" {
-#     command = local.pip_install_command
-#   }
-# }
 
 resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
@@ -160,9 +134,7 @@ resource "null_resource" "function_app_publish" {
     local.publish_code_command,
     azurerm_linux_function_app.observe_collect_function
     ]
-
   triggers = {
-    # input_json = data.archive_file.observe_collection_function.output_md5 //only refresh if collections changed
     publish_code_command = local.publish_code_command
   }
 }
