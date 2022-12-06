@@ -33,12 +33,13 @@ class ResourcesHandler(BaseHandler):
         # corresponding APIs to get the full resource information.
 
         # Microsoft.Compute/virtualMachines
-        # Reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list-all
+        # Reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list-by-location
         # Microsoft.Compute/disks
         # Reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list
         compute_client = ComputeManagementClient(
             self.azure_credentials, sub_id)
-        vms = compute_client.virtual_machines.list_all()
+        vms = compute_client.virtual_machines.list_by_location(location=self.azure_client_location)
+
         disks = compute_client.disks.list()
 
         # Microsoft.Sql/servers
@@ -95,7 +96,7 @@ class ResourcesHandler(BaseHandler):
             self.azure_credentials, sub_id)
 
         # Currently our exclude list is empty and we allow duplicated info
-        # for some of the services. This is because we need information fro
+        # for some of the services. This is because we need information from
         # both list APIs.
         exclude_resource_types = [
             #     "Microsoft.Compute/virtualMachines",
@@ -111,6 +112,10 @@ class ResourcesHandler(BaseHandler):
         ]
         list_filter = ' and '.join(
             ["resourceType ne '" + r + "'" for r in exclude_resource_types])
+        # Apply filter on Azure location.
+        if len(list_filter) > 0:
+            list_filter += " and "
+        list_filter += f"location eq '{self.azure_client_location}'"
 
         # Reference: https://learn.microsoft.com/en-us/rest/api/resources/resources/list
         other_resources = resource_client.resources.list(
@@ -137,13 +142,17 @@ class ResourcesHandler(BaseHandler):
             resources_list.append(subscription)
 
             for resource in resources_list:
+                serialized = resource.serialize(keep_readonly=True)
+                if 'location' in serialized and serialized['location'] != self.azure_client_location:
+                    # Skip the resource if it is in a different Azure location.
+                    continue
+
                 if is_first_observation is False:
                     self.buf.write(",")
                 else:
                     is_first_observation = False
 
-                self.buf.write(json.dumps(resource.serialize(
-                    keep_readonly=True), separators=(',', ':')))
+                self.buf.write(json.dumps(serialized, separators=(',', ':')))
                 self.num_obs += 1
                 # Buffer size is above threshold.
                 if self.buf.tell() >= self.max_req_size_byte:

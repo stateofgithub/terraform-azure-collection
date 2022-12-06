@@ -26,6 +26,7 @@ class BaseHandler:
             self.azure_tenant_id = os.environ["AZURE_TENANT_ID"]
             self.azure_client_id = os.environ["AZURE_CLIENT_ID"]
             self.azure_client_secret = os.environ["AZURE_CLIENT_SECRET"]
+            self.azure_client_location = os.environ["AZURE_CLIENT_LOCATION"]
         except:
             logging.critical(
                 "[ResourcesHandler] Required ENV_VARS are not set properly")
@@ -105,7 +106,7 @@ class BaseHandler:
     async def _list_subscriptions(self) -> list:
         client = SubscriptionClient(self.azure_credentials)
         subscriptions = []
-        # Reference https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
+        # Reference: https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
         return client.subscriptions.list()
 
 
