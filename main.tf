@@ -1,16 +1,20 @@
+# NOTE: Azure Functions Core Tools must be installed locally
+# https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v4%2Cmacos%2Ccsharp%2Cportal%2Cbash#install-the-azure-functions-core-tools
+locals {
+    is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
+    sleep_command = local.is_windows == true ? "Start-Sleep" : "sleep"
+    region = lookup(var.location_abbreviation, var.location, "none-found")
+}
+
 # Obtains current client config from az login, allowing terraform to run.
 data "azuread_client_config" "current" { }
 
 # Creates the alias of your Subscription to be used for association below.
 data "azurerm_subscription" "primary" { }
 
-# Registers a required Application in Azure Active Directory
-# It's essentially a service that assigns the user as the owner of the application.
-# The application inherits the credentials of the user who ran terraform.  
-#   Note: some users may want to use a service account instead.
-
+# https://petri.com/understanding-azure-app-registrations/#:~:text=Azure%20App%20registrations%20are%20an,to%20use%20an%20app%20registration.
 resource "azuread_application" "observe_app_registration" {
-  display_name = "observe"
+  display_name = lower("observeapp-${var.observe_customer}-${local.region}")
   owners = [data.azuread_client_config.current.object_id]
 }
 
@@ -25,6 +29,7 @@ resource "azuread_service_principal" "observe_service_principal" {
 }
 
 # Assigns the created service principal a role in current Azure Subscription.
+
 resource "azurerm_role_assignment" "observe_role_assignment" {
   scope                = data.azurerm_subscription.primary.id
   role_definition_name = "Monitoring Reader"
@@ -32,12 +37,12 @@ resource "azurerm_role_assignment" "observe_role_assignment" {
 }
 
 resource "azurerm_resource_group" "observe_resource_group" {
-  name     = var.resource_group_name
+  name     = lower("observe-resources-${var.observe_customer}-${local.region}")
   location = var.location
 }
 
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
-  name                = var.eventhub_namespace
+  name                = lower("observeEventhubNamesapce-${var.observe_customer}-${local.region}")
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Basic"
@@ -49,7 +54,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
 }
 
 resource "azurerm_eventhub" "observe_eventhub" {
-  name                = var.eventhub_name
+  name                = lower("observeeventhub-${var.observe_customer}-${local.region}")
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   partition_count     = 4
@@ -57,7 +62,7 @@ resource "azurerm_eventhub" "observe_eventhub" {
 }
 
 resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" {
-  name                = "observeSharedAccessPoicy"
+  name                = lower("observeSharedAccessPoicy-${var.observe_customer}-${local.region}")
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   eventhub_name       = azurerm_eventhub.observe_eventhub.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
@@ -67,7 +72,7 @@ resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" 
 }
 
 resource "azurerm_service_plan" "observe_service_plan" {
-  name                = "observe-service-plan"
+  name                = lower("observe-service-plan-${var.observe_customer}${local.region}")
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
@@ -75,7 +80,7 @@ resource "azurerm_service_plan" "observe_service_plan" {
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
-  name                     = "observeterraformstorage"
+  name                     = lower("storage${var.observe_customer}${local.region}")
   resource_group_name      = azurerm_resource_group.observe_resource_group.name
   location                 = azurerm_resource_group.observe_resource_group.location
   account_tier             = "Standard"
@@ -83,13 +88,13 @@ resource "azurerm_storage_account" "observe_storage_account" {
 }
 
 resource "azurerm_storage_container" "observe_storage_container" {
-  name                  = "observe-collection"
+  name                  = lower("container${var.observe_customer}${local.region}")
   storage_account_name  = azurerm_storage_account.observe_storage_account.name
   container_access_type = "private"
 }
 
-resource "azurerm_linux_function_app" "observe_collect_function" {
-  name                = "observe-collection-${var.observe_customer}-${azurerm_resource_group.observe_resource_group.location}"
+resource "azurerm_linux_function_app" "observe_collect_function_app" {
+  name                = lower("observe-collection-${var.observe_customer}-${local.region}")
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   service_plan_id     = azurerm_service_plan.observe_service_plan.id
@@ -106,9 +111,10 @@ resource "azurerm_linux_function_app" "observe_collect_function" {
     AZURE_TENANT_ID = data.azuread_client_config.current.tenant_id
     AZURE_CLIENT_ID = azuread_application.observe_app_registration.application_id
     AZURE_CLIENT_SECRET = azuread_application_password.observe_password.value
-    timer_resources_func_schedule = var.timer_func_schedule
-    timer_vm_metrics_func_schedule = var.timer_func_schedule_vm
-    EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME = var.eventhub_name
+    AZURE_CLIENT_LOCATION = lower(replace(var.location, " ", ""))
+    timer_resources_func_schedule = var.timer_resources_func_schedule
+    timer_vm_metrics_func_schedule = var.timer_vm_metrics_func_schedule
+    EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME = azurerm_eventhub.observe_eventhub.name 
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
   }
 
@@ -119,22 +125,19 @@ resource "azurerm_linux_function_app" "observe_collect_function" {
   }
 }
 
-# NOTE: Azure Functions Core Tools must be installed locally
-# https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v4%2Cmacos%2Ccsharp%2Cportal%2Cbash#install-the-azure-functions-core-tools
-locals {
-    publish_code_command = "cd ObserveFunctionApp && func azure functionapp publish ${azurerm_linux_function_app.observe_collect_function.name}"
-    # pip_install_command  =  "pip install --target='./ObserveFunctionApp/.python_packages/lib/site-packages' -r ./ObserveFunctionApp/requirements.txt --platform manylinux1_x86_64 --only-binary=:all:"
-}
-
 resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
-    command = local.publish_code_command
+    interpreter = local.is_windows ? ["PowerShell", "-Command"] : []
+    command = <<EOT
+      ${local.sleep_command} 30
+      cd ObserveFunctionApp
+      func azure functionapp publish ${azurerm_linux_function_app.observe_collect_function_app.name} --python
+      ${local.sleep_command} 30
+      EOT
   }
   depends_on = [
-    local.publish_code_command,
-    azurerm_linux_function_app.observe_collect_function
-    ]
-  triggers = {
-    publish_code_command = local.publish_code_command
-  }
+    azurerm_linux_function_app.observe_collect_function_app
+  ]
 }
+
+

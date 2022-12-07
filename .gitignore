@@ -135,6 +135,7 @@ terraform.tfstate
 *.tfstate*
 terraform.tfvars
 *.auto.tfvars
+tfplan
 
 .terraform.lock.hcl
 
