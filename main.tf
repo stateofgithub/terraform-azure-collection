@@ -94,7 +94,7 @@ resource "azurerm_storage_container" "observe_storage_container" {
 }
 
 resource "azurerm_linux_function_app" "observe_collect_function_app" {
-  name                = lower("observe-app-${var.observe_customer}-${local.location}")
+  name                = lower("observe-app-${var.observe_customer}-${var.location}")
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   service_plan_id     = azurerm_service_plan.observe_service_plan.id
