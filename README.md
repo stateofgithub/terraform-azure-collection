@@ -41,3 +41,22 @@ Inside root of this repo and crate a file named `azure.auto.tfvars`. The content
 ```
 
 Collection should begin shortly
+
+**Removing the Application**
+
+```
+    terraform destroy
+```
+>Note: You may encounter the following bug in the Azure provider during your destroy:
+```
+  Error: Deleting service principal with object ID "########-####-####-####-############", got status 403
+  
+  ServicePrincipalsClient.BaseClient.Delete(): unexpected status 403 with OData error:
+  Authorization_RequestDenied: Insufficient privileges to complete the operation.
+```
+>If this happens execute simply remove the azuread_service_principal.observe_service_principal from terraform state and coninue the destroy
+```
+  terraform state rm azuread_service_principal.observe_service_principal
+  terraform destroy
+```
+  
