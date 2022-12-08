@@ -25,7 +25,7 @@ Inside root of this repo and crate a file named `azure.auto.tfvars`. The content
 ```
 > Note: Default values are assigned for `timer_resources_func_schedule` and `timer_vm_metrics_func_schedule`, both based on [NCRONTAB](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-timer?tabs=in-process&pivots=programming-language-csharp#ncrontab-examples)
 >
-> `location`'s value is Azure's [Regional Display Name](https://azuretracks.com/2021/04/current-azure-region-names-reference/) and is "East US" by default.
+> `location`'s value is Azure's Retional [Name](https://azuretracks.com/2021/04/current-azure-region-names-reference/) and is "eastus" by default.
 
 **Login to Azure with CLI**
 

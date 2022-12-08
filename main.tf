@@ -3,7 +3,7 @@
 locals {
     is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
     sleep_command = local.is_windows == true ? "Start-Sleep" : "sleep"
-    region = lower(replace(var.location, " ", ""))
+    region = lookup(var.location_abbreviation, var.location, "none-found")
 }
 
 # Obtains current client config from az login, allowing terraform to run.
@@ -80,7 +80,7 @@ resource "azurerm_service_plan" "observe_service_plan" {
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
-  name                     = lower("ots${local.region}")
+  name                     = lower("storage${var.observe_customer}${local.region}")
   resource_group_name      = azurerm_resource_group.observe_resource_group.name
   location                 = azurerm_resource_group.observe_resource_group.location
   account_tier             = "Standard"
@@ -88,12 +88,12 @@ resource "azurerm_storage_account" "observe_storage_account" {
 }
 
 resource "azurerm_storage_container" "observe_storage_container" {
-  name                  = lower("osc${local.region}")
+  name                  = lower("container${var.observe_customer}${local.region}")
   storage_account_name  = azurerm_storage_account.observe_storage_account.name
   container_access_type = "private"
 }
 
-resource "azurerm_linux_function_app" "observe_collect_function" {
+resource "azurerm_linux_function_app" "observe_collect_function_app" {
   name                = lower("observe-collection-${var.observe_customer}-${local.region}")
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
@@ -129,12 +129,15 @@ resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
     interpreter = local.is_windows ? ["PowerShell", "-Command"] : []
     command = <<EOT
+      ${local.sleep_command} 30
       cd ObserveFunctionApp
-      func azure functionapp publish ${azurerm_linux_function_app.observe_collect_function.name}
-      ${local.sleep_command} 10
+      func azure functionapp publish ${azurerm_linux_function_app.observe_collect_function_app.name} --python
+      ${local.sleep_command} 30
       EOT
   }
   depends_on = [
-    azurerm_linux_function_app.observe_collect_function
+    azurerm_linux_function_app.observe_collect_function_app
   ]
 }
+
+
