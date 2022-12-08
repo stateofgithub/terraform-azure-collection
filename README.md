@@ -21,7 +21,7 @@ Inside root of this repo and crate a file named `azure.auto.tfvars`. The content
     observe_domain = "<OBSERVE_DOMAIN(i.e. observe-staging.com)>"
     timer_resources_func_schedule = "<TIMER_TRIGGER_FUNCTION_SCHEDULE>" 
     timer_vm_metrics_func_schedule = "<TIMER_TRIGGER_FUNCTION_SCHEDULE>"
-    location = "<AZURE_REGIONAL_DISPLAY_NAME>"
+    location = "<AZURE_REGIONAL_NAME>"
 ```
 > Note: Default values are assigned for `timer_resources_func_schedule` and `timer_vm_metrics_func_schedule`, both based on [NCRONTAB](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-timer?tabs=in-process&pivots=programming-language-csharp#ncrontab-examples)
 >
