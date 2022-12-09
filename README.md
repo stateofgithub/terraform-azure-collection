@@ -12,7 +12,7 @@ Observe's Azure collection requires the following to be installed locally:
     git clone git@github.com:observeinc/terraform-azure-collection.git
 ```
 
-**Assign Applicaiton Variables**
+**Assign Application Variables**
 
 Inside root of this repo and crate a file named `azure.auto.tfvars`. The contents of that file should be:
 ```
