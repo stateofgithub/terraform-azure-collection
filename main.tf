@@ -29,7 +29,7 @@ resource "azuread_service_principal" "observe_service_principal" {
 }
 
 # Assigns the created service principal a role in current Azure Subscription.
-
+# https://learn.microsoft.com/en-us/azure/azure-monitor/roles-permissions-security#security-considerations-for-monitoring-data
 resource "azurerm_role_assignment" "observe_role_assignment" {
   scope                = data.azurerm_subscription.primary.id
   role_definition_name = "Monitoring Reader"
@@ -41,6 +41,7 @@ resource "azurerm_resource_group" "observe_resource_group" {
   location = var.location
 }
 
+#
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   name                = lower("observeEventhubNamesapce-${var.observe_customer}-${local.region}")
   location            = azurerm_resource_group.observe_resource_group.location
