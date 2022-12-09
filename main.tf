@@ -29,6 +29,7 @@ resource "azuread_service_principal" "observe_service_principal" {
 }
 
 # Assigns the created service principal a role in current Azure Subscription.
+# https://learn.microsoft.com/en-us/azure/azure-monitor/roles-permissions-security#monitoring-reader
 # https://learn.microsoft.com/en-us/azure/azure-monitor/roles-permissions-security#security-considerations-for-monitoring-data
 resource "azurerm_role_assignment" "observe_role_assignment" {
   scope                = data.azurerm_subscription.primary.id
