@@ -44,7 +44,7 @@ resource "azurerm_resource_group" "observe_resource_group" {
 
 #
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
-  name                = lower("observeEventhubNamesapce-${var.observe_customer}-${local.region}")
+  name                = lower("observeEventhubNamespace-${var.observe_customer}-${local.region}")
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Standard"
