@@ -105,7 +105,6 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   storage_account_access_key = azurerm_storage_account.observe_storage_account.primary_access_key
 
   app_settings = {
-    WEBSITE_RUN_FROM_PACKAGE = 1
     AzureWebJobsDisableHomepage = true
     OBSERVE_DOMAIN = var.observe_domain
     OBSERVE_CUSTOMER = var.observe_customer
