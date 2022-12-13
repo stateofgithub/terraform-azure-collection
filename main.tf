@@ -47,8 +47,8 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   name                = lower("observeEventhubNamesapce-${var.observe_customer}-${local.region}")
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
-  sku                 = "Basic"
-  capacity            = 4
+  sku                 = "Standard"
+  capacity            = 32
 
   tags = {
     created_by = "Observe Terraform"
