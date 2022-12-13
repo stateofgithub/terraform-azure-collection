@@ -34,7 +34,7 @@
 
 5. Assign Application Variables
 
-    Inside the root of the terraform-azure-collection create a file named **`azure.auto.tfvars`**. The contents of that file should will:
+    Inside the root of the terraform-azure-collection create a file named **`azure.auto.tfvars`**. The contents of that file will be:
 
     ```
     observe_customer = "<OBSERVE_CUSTOMER_ID>"
