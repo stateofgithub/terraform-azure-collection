@@ -14,7 +14,7 @@ data "azurerm_subscription" "primary" { }
 
 # https://petri.com/understanding-azure-app-registrations/#:~:text=Azure%20App%20registrations%20are%20an,to%20use%20an%20app%20registration.
 resource "azuread_application" "observe_app_registration" {
-  display_name = lower("observeapp-${var.observe_customer}-${local.region}")
+  display_name = "observeApp-${var.observe_customer}-${var.location}"
   owners = [data.azuread_client_config.current.object_id]
 }
 
@@ -38,13 +38,13 @@ resource "azurerm_role_assignment" "observe_role_assignment" {
 }
 
 resource "azurerm_resource_group" "observe_resource_group" {
-  name     = lower("observe-resources-${var.observe_customer}-${local.region}")
+  name     = "observeResources-${var.observe_customer}-${var.location}"
   location = var.location
 }
 
 #
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
-  name                = lower("observeEventhubNamespace-${var.observe_customer}-${local.region}")
+  name                = "observeEventHubNamespace-${var.observe_customer}-${var.location}"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Standard"
@@ -56,7 +56,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
 }
 
 resource "azurerm_eventhub" "observe_eventhub" {
-  name                = lower("observeeventhub-${var.observe_customer}-${local.region}")
+  name                = "observeEventHub-${var.observe_customer}-${var.location}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   partition_count     = 4
@@ -64,7 +64,7 @@ resource "azurerm_eventhub" "observe_eventhub" {
 }
 
 resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" {
-  name                = lower("observeSharedAccessPolicy-${var.observe_customer}-${local.region}")
+  name                = "observeSharedAccessPolicy-${var.observe_customer}-${var.location}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   eventhub_name       = azurerm_eventhub.observe_eventhub.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
@@ -74,7 +74,7 @@ resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" 
 }
 
 resource "azurerm_service_plan" "observe_service_plan" {
-  name                = lower("observe-service-plan-${var.observe_customer}${local.region}")
+  name                = "observeServicePlan-${var.observe_customer}${var.location}"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
@@ -96,7 +96,7 @@ resource "azurerm_storage_container" "observe_storage_container" {
 }
 
 resource "azurerm_linux_function_app" "observe_collect_function_app" {
-  name                = lower("observe-app-${var.observe_customer}-${var.location}")
+  name                = "observeApp-${var.observe_customer}-${var.location}"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   service_plan_id     = azurerm_service_plan.observe_service_plan.id
@@ -128,7 +128,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
 }
 
 resource "azurerm_application_insights" "observe_insights" {
-  name                = "observe-application-insights"
+  name                = "observeApplicationInsights"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   application_type    = "web"
