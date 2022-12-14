@@ -48,7 +48,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Standard"
-  capacity            = 32
+  capacity            = 2
 
   tags = {
     created_by = "Observe Terraform"
@@ -59,8 +59,8 @@ resource "azurerm_eventhub" "observe_eventhub" {
   name                = "observeEventHub-${var.observe_customer}-${var.location}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
-  partition_count     = 4
-  message_retention   = 1
+  partition_count     = 32
+  message_retention   = 7
 }
 
 resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" {
