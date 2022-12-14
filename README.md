@@ -45,9 +45,9 @@ timer_vm_metrics_func_schedule = "<TIMER_TRIGGER_FUNCTION_SCHEDULE>"
 location = "<AZURE_REGIONAL_NAME>"
 ```
 
-    > Note: Default values are assigned for **`timer_resources_func_schedule`** and **`timer_vm_metrics_func_schedule`**, both based on **[NCRONTAB](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-timer?tabs=in-process&pivots=programming-language-csharp#ncrontab-examples)**
-    >
-    > **`location`'s** value is [Azure's Regional Name](https://azuretracks.com/2021/04/current-azure-region-names-reference/) and is "eastus" by default
+> Note: Default values are assigned for **`timer_resources_func_schedule`** and **`timer_vm_metrics_func_schedule`**, both based on **[NCRONTAB](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-timer?tabs=in-process&pivots=programming-language-csharp#ncrontab-examples)**
+>
+> **`location`'s** value is [Azure's Regional Name](https://azuretracks.com/2021/04/current-azure-region-names-reference/) and is "eastus" by default
 
 6. Deploy the Application
    
