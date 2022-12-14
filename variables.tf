@@ -19,13 +19,13 @@ variable "observe_domain" {
 
 variable "timer_resources_func_schedule" {
   type        = string
-  description = "Eventhub name to use for resources function"
+  description = "Resource collection function timer schedule"
   default     = "0 */10 * * * *"
 }
 
 variable "timer_vm_metrics_func_schedule" {
   type        = string
-  description = "Eventhub name to use for vm metrics function"
+  description = "VM metrics function collection schedule"
   default     = "30 */5 * * * *"
 }
 
