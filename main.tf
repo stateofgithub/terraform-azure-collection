@@ -4,6 +4,7 @@ locals {
     is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
     sleep_command = local.is_windows == true ? "Start-Sleep" : "sleep"
     region = lookup(var.location_abbreviation, var.location, "none-found")
+    keyvault_name = "observe-${var.observe_customer}${local.region}"
 }
 
 # Obtains current client config from az login, allowing terraform to run.
@@ -26,6 +27,53 @@ resource "azuread_application_password" "observe_password" {
 # Creates a Service "Principal" for the "observe" app.
 resource "azuread_service_principal" "observe_service_principal" {
   application_id = azuread_application.observe_app_registration.application_id
+}
+
+resource "azurerm_key_vault" "key_vault" {
+  name                        = "${local.keyvault_name}"
+  location                    = var.location
+  resource_group_name         = azurerm_resource_group.observe_resource_group.name
+  tenant_id                   = data.azuread_client_config.current.tenant_id
+
+  sku_name = "standard"
+
+
+  access_policy {
+    tenant_id = data.azuread_client_config.current.tenant_id
+    object_id = data.azuread_client_config.current.object_id
+
+    secret_permissions = [
+      "Backup",
+      "Restore",
+      "Get",
+      "Set",
+      "List",
+      "Delete",
+      "Purge",
+    ]
+  }
+
+  access_policy {
+    tenant_id = data.azuread_client_config.current.tenant_id
+    object_id =lookup(azurerm_linux_function_app.observe_collect_function_app.identity[0],"principal_id")
+
+    secret_permissions = [
+      "Backup",
+      "Restore",
+      "Get",
+      "Set",
+      "List",
+      "Delete",
+      "Purge",
+    ]
+  }
+
+}
+
+resource "azurerm_key_vault_secret" "observe_token" {
+  name         = "observe-token"
+  value        = var.observe_token
+  key_vault_id = azurerm_key_vault.key_vault.id
 }
 
 # Assigns the created service principal a role in current Azure Subscription.
@@ -108,7 +156,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     AzureWebJobsDisableHomepage = true
     OBSERVE_DOMAIN = var.observe_domain
     OBSERVE_CUSTOMER = var.observe_customer
-    OBSERVE_TOKEN = var.observe_token
+    OBSERVE_TOKEN = "@Microsoft.KeyVault(SecretUri=https://${local.keyvault_name}.vault.azure.net/secrets/observe-token/)"
     AZURE_TENANT_ID = data.azuread_client_config.current.tenant_id
     AZURE_CLIENT_ID = azuread_application.observe_app_registration.application_id
     AZURE_CLIENT_SECRET = azuread_application_password.observe_password.value
@@ -119,6 +167,10 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
     # Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
     # APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.observe_insights.instrumentation_key 
+  }
+
+  identity {
+    type = "SystemAssigned"
   }
 
   site_config {
