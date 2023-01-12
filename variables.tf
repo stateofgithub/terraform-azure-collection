@@ -98,7 +98,7 @@ variable "location_abbreviation" {
     "swedencentral" : "sc",
     "southcentralus" : "scu",
     "southcentralusstage" : "scus",
-    "southcentralusstg" : "scustg",
+    "southcentralusstg" : "sctg",
     "southeastasia" : "sea",
     "southindia" : "si",
     "switzerlandnorth" : "sn",

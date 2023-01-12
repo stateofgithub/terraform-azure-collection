@@ -4,7 +4,8 @@ locals {
     is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
     sleep_command = local.is_windows == true ? "Start-Sleep" : "sleep"
     region = lookup(var.location_abbreviation, var.location, "none-found")
-    keyvault_name = "observe-${var.observe_customer}${local.region}"
+    keyvault_name = "${local.region}${var.observe_customer}${local.sub}"
+    sub = substr(data.azurerm_subscription.primary.subscription_id, -8, -1)
 }
 
 # Obtains current client config from az login, allowing terraform to run.
@@ -15,7 +16,7 @@ data "azurerm_subscription" "primary" { }
 
 # https://petri.com/understanding-azure-app-registrations/#:~:text=Azure%20App%20registrations%20are%20an,to%20use%20an%20app%20registration.
 resource "azuread_application" "observe_app_registration" {
-  display_name = "observeApp-${var.observe_customer}-${var.location}"
+  display_name = "observeApp-${var.observe_customer}-${var.location}-${local.sub}"
   owners = [data.azuread_client_config.current.object_id]
 }
 
@@ -86,13 +87,13 @@ resource "azurerm_role_assignment" "observe_role_assignment" {
 }
 
 resource "azurerm_resource_group" "observe_resource_group" {
-  name     = "observeResources-${var.observe_customer}-${var.location}"
+  name     = "observeResources-${var.observe_customer}-${var.location}-${local.sub}"
   location = var.location
 }
 
 #
 resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
-  name                = "observeEventHubNamespace-${var.observe_customer}-${var.location}"
+  name                = local.keyvault_name
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Standard"
@@ -104,7 +105,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
 }
 
 resource "azurerm_eventhub" "observe_eventhub" {
-  name                = "observeEventHub-${var.observe_customer}-${var.location}"
+  name                = "observeEventHub-${var.observe_customer}-${var.location}-${local.sub}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   partition_count     = 32
@@ -112,7 +113,7 @@ resource "azurerm_eventhub" "observe_eventhub" {
 }
 
 resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" {
-  name                = "observeSharedAccessPolicy-${var.observe_customer}-${var.location}"
+  name                = "observeSharedAccessPolicy-${var.observe_customer}-${var.location}-${local.sub}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   eventhub_name       = azurerm_eventhub.observe_eventhub.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
@@ -122,7 +123,7 @@ resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" 
 }
 
 resource "azurerm_service_plan" "observe_service_plan" {
-  name                = "observeServicePlan-${var.observe_customer}${var.location}"
+  name                = "observeServicePlan-${var.observe_customer}${var.location}-${local.sub}"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
@@ -130,7 +131,7 @@ resource "azurerm_service_plan" "observe_service_plan" {
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
-  name                     = lower("storage${var.observe_customer}${local.region}")
+  name                     = lower("${var.observe_customer}${local.region}${local.sub}")
   resource_group_name      = azurerm_resource_group.observe_resource_group.name
   location                 = azurerm_resource_group.observe_resource_group.location
   account_tier             = "Standard"
@@ -138,13 +139,13 @@ resource "azurerm_storage_account" "observe_storage_account" {
 }
 
 resource "azurerm_storage_container" "observe_storage_container" {
-  name                  = lower("container${var.observe_customer}${local.region}")
+  name                  = lower("container${var.observe_customer}${local.region}-${local.sub}")
   storage_account_name  = azurerm_storage_account.observe_storage_account.name
   container_access_type = "private"
 }
 
 resource "azurerm_linux_function_app" "observe_collect_function_app" {
-  name                = "observeApp-${var.observe_customer}-${var.location}"
+  name                = "observeApp-${var.observe_customer}-${var.location}-${local.sub}"
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   service_plan_id     = azurerm_service_plan.observe_service_plan.id
