@@ -33,7 +33,7 @@ variable "timer_vm_metrics_func_schedule" {
 # https://azuretracks.com/2021/04/current-azure-region-names-reference/
 
 variable "location" {
-  type        = list(string)
+  type        = string
   description = "Azure Location to deploy resources"
 }
 
