@@ -76,6 +76,9 @@ class ResourcesHandler(BaseHandler):
         web_sites = []
         web_functions = []
         for w in web_sites_itr:
+            # Filter out non function apps. Possible values are `functionapp,linux`, `app,linux,container`, etc.
+            if 'functionapp' not in w.kind:
+                continue
             web_sites.append(w)
             site_name = w.name
             site_resource_group = w.resource_group
