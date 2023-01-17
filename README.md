@@ -78,8 +78,19 @@ To receive logs and metrics for resources please add the appropriate diagnostic 
   ServicePrincipalsClient.BaseClient.Delete(): unexpected status 403 with OData error:
   Authorization_RequestDenied: Insufficient privileges to complete the operation.
 ```
->If this happens execute simply remove the azuread_service_principal.observe_service_principal from terraform state and continue the destroy
+>If this happens execute simply remove the azuread_service_principal.observe_service_principal from terraform state and continue the destroy.
+
+1. Find the service_principal object name by using the id returned.  i.e. (replace with your id)
 ```
-  terraform state rm azuread_service_principal.observe_service_principal
+  terraform state list -id=249783e5-bcfd-480b-b8e8-5f8aaa7452e8
+```
+
+2. Remove the object from state.  Make sure to wrap the object in single quotes. i.e. (replace name with that returned in previous step.)
+```
+  terraform state rm 'module.collection["eastus"].azuread_service_principal.observe_service_principal' 
+```
+
+3. Re-perform the terraform destroy 
+```
   terraform destroy
 ```
