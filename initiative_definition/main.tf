@@ -1,10 +1,10 @@
-data "azurerm_subscription" "primary" { }
+data "azurerm_subscription" "primary" {}
 
 resource "azurerm_management_group_policy_assignment" "observe_policy_assignment" {
   name                 = "observe-policy-${var.location}"
   policy_definition_id = var.policy_set
   management_group_id  = var.management_group_id
-  location = var.location
+  location             = var.location
 
   identity {
     type = "SystemAssigned"

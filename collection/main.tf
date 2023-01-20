@@ -1,23 +1,23 @@
 # NOTE: Azure Functions Core Tools must be installed locally
 # https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v4%2Cmacos%2Ccsharp%2Cportal%2Cbash#install-the-azure-functions-core-tools
 locals {
-    is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
-    sleep_command = local.is_windows == true ? "Start-Sleep" : "sleep"
-    region = lookup(var.location_abbreviation, var.location, "none-found")
-    keyvault_name = "${local.region}${var.observe_customer}${local.sub}"
-    sub = substr(data.azurerm_subscription.primary.subscription_id, -8, -1)
+  is_windows    = substr(pathexpand("~"), 0, 1) == "/" ? false : true
+  sleep_command = local.is_windows == true ? "Start-Sleep" : "sleep"
+  region        = lookup(var.location_abbreviation, var.location, "none-found")
+  keyvault_name = "${local.region}${var.observe_customer}${local.sub}"
+  sub           = substr(data.azurerm_subscription.primary.subscription_id, -8, -1)
 }
 
 # Obtains current client config from az login, allowing terraform to run.
-data "azuread_client_config" "current" { }
+data "azuread_client_config" "current" {}
 
 # Creates the alias of your Subscription to be used for association below.
-data "azurerm_subscription" "primary" { }
+data "azurerm_subscription" "primary" {}
 
 # https://petri.com/understanding-azure-app-registrations/#:~:text=Azure%20App%20registrations%20are%20an,to%20use%20an%20app%20registration.
 resource "azuread_application" "observe_app_registration" {
   display_name = "observeApp-${var.observe_customer}-${var.location}-${local.sub}"
-  owners = [data.azuread_client_config.current.object_id]
+  owners       = [data.azuread_client_config.current.object_id]
 }
 
 # Creates an auth token that is used by the app to call APIs.
@@ -31,10 +31,10 @@ resource "azuread_service_principal" "observe_service_principal" {
 }
 
 resource "azurerm_key_vault" "key_vault" {
-  name                        = "${local.keyvault_name}"
-  location                    = var.location
-  resource_group_name         = azurerm_resource_group.observe_resource_group.name
-  tenant_id                   = data.azuread_client_config.current.tenant_id
+  name                = local.keyvault_name
+  location            = var.location
+  resource_group_name = azurerm_resource_group.observe_resource_group.name
+  tenant_id           = data.azuread_client_config.current.tenant_id
 
   sku_name = "standard"
 
@@ -56,7 +56,7 @@ resource "azurerm_key_vault" "key_vault" {
 
   access_policy {
     tenant_id = data.azuread_client_config.current.tenant_id
-    object_id =lookup(azurerm_linux_function_app.observe_collect_function_app.identity[0],"principal_id")
+    object_id = lookup(azurerm_linux_function_app.observe_collect_function_app.identity[0], "principal_id")
 
     secret_permissions = [
       "Backup",
@@ -97,7 +97,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   sku                 = "Standard"
-  capacity            = 2
+  capacity            = 4
 
   tags = {
     created_by = "Observe Terraform"
@@ -113,13 +113,13 @@ resource "azurerm_eventhub" "observe_eventhub" {
 }
 
 resource "azurerm_eventhub_namespace_authorization_rule" "observe_eventhub_access_policy" {
-  name                = "observeSharedAccessPolicy-${var.observe_customer}-${var.location}-${local.sub}"
-  namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
-  # eventhub_name       = azurerm_eventhub.observe_eventhub.name
+  name           = "observeSharedAccessPolicy-${var.observe_customer}-${var.location}-${local.sub}"
+  namespace_name = azurerm_eventhub_namespace.observe_eventhub_namespace.name
+  #eventhub_name       = azurerm_eventhub.observe_eventhub.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   listen              = true
-  send                = false
-  manage              = false
+  send                = true
+  manage              = true
 }
 
 resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" {
@@ -128,8 +128,8 @@ resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" 
   eventhub_name       = azurerm_eventhub.observe_eventhub.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   listen              = true
-  send                = false
-  manage              = false
+  send                = true
+  manage              = true
 }
 
 resource "azurerm_service_plan" "observe_service_plan" {
@@ -164,17 +164,17 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   storage_account_access_key = azurerm_storage_account.observe_storage_account.primary_access_key
 
   app_settings = {
-    AzureWebJobsDisableHomepage = true
-    OBSERVE_DOMAIN = var.observe_domain
-    OBSERVE_CUSTOMER = var.observe_customer
-    OBSERVE_TOKEN = "@Microsoft.KeyVault(SecretUri=https://${local.keyvault_name}.vault.azure.net/secrets/observe-token/)"
-    AZURE_TENANT_ID = data.azuread_client_config.current.tenant_id
-    AZURE_CLIENT_ID = azuread_application.observe_app_registration.application_id
-    AZURE_CLIENT_SECRET = azuread_application_password.observe_password.value
-    AZURE_CLIENT_LOCATION = lower(replace(var.location, " ", ""))
-    timer_resources_func_schedule = var.timer_resources_func_schedule
-    timer_vm_metrics_func_schedule = var.timer_vm_metrics_func_schedule
-    EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME = azurerm_eventhub.observe_eventhub.name 
+    AzureWebJobsDisableHomepage                   = true
+    OBSERVE_DOMAIN                                = var.observe_domain
+    OBSERVE_CUSTOMER                              = var.observe_customer
+    OBSERVE_TOKEN                                 = "@Microsoft.KeyVault(SecretUri=https://${local.keyvault_name}.vault.azure.net/secrets/observe-token/)"
+    AZURE_TENANT_ID                               = data.azuread_client_config.current.tenant_id
+    AZURE_CLIENT_ID                               = azuread_application.observe_app_registration.application_id
+    AZURE_CLIENT_SECRET                           = azuread_application_password.observe_password.value
+    AZURE_CLIENT_LOCATION                         = lower(replace(var.location, " ", ""))
+    timer_resources_func_schedule                 = var.timer_resources_func_schedule
+    timer_vm_metrics_func_schedule                = var.timer_vm_metrics_func_schedule
+    EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME       = azurerm_eventhub.observe_eventhub.name
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
     # Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
     # APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.observe_insights.instrumentation_key 
@@ -185,9 +185,9 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   }
 
   site_config {
-      application_stack  {
-        python_version = "3.9"
-      }
+    application_stack {
+      python_version = "3.9"
+    }
   }
 }
 
@@ -202,7 +202,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
 resource "null_resource" "function_app_publish" {
   provisioner "local-exec" {
     interpreter = local.is_windows ? ["PowerShell", "-Command"] : []
-    command = <<EOT
+    command     = <<EOT
       ${local.sleep_command} 30
       cd ${path.module}/ObserveFunctionApp
       func azure functionapp publish ${azurerm_linux_function_app.observe_collect_function_app.name} --python
@@ -215,9 +215,34 @@ resource "null_resource" "function_app_publish" {
 }
 
 output "eventhubs" {
-  value  = azurerm_eventhub.observe_eventhub
+  value = azurerm_eventhub.observe_eventhub
 }
 
 output "eventhub_keys" {
-  value = azurerm_eventhub_namespace_authorization_rule.observe_eventhub_access_policy
+  #value = azurerm_eventhub_namespace_authorization_rule.observe_eventhub_access_policy
+  value = azurerm_eventhub_authorization_rule.observe_eventhub_access_policy
+}
+
+resource "azurerm_sql_server" "joes_sql_server" {
+  name                         = "joesqlserver"
+  resource_group_name          = azurerm_resource_group.observe_resource_group.name
+  location                     = azurerm_resource_group.observe_resource_group.location
+  version                      = "12.0"
+  administrator_login          = "4dm1n157r470r"
+  administrator_login_password = "4-v3ry-53cr37-p455w0rd"
+
+  tags = {
+    environment = "production"
+  }
+}
+
+resource "azurerm_sql_database" "joes_sql_database" {
+  name                = "joesqldatabase"
+  resource_group_name = azurerm_resource_group.observe_resource_group.name
+  location            = azurerm_resource_group.observe_resource_group.location
+  server_name         = azurerm_sql_server.joes_sql_server.name
+
+  tags = {
+    environment = "production"
+  }
 }

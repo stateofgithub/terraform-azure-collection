@@ -11,7 +11,7 @@ variable "observe_token" {
 variable "observe_domain" {
   type        = string
   description = "Observe domain"
-  default = "observeinc.com"
+  default     = "observeinc.com"
 }
 
 # Based on NCRONTAB Expressions
@@ -40,7 +40,7 @@ variable "location" {
 variable "location_abbreviation" {
   type        = map(string)
   description = "A unique, short abbreviation to use for each location when assiging names to resources"
-  default     = {
+  default = {
     "australiacentral" : "ac",
     "australiacentral2" : "ac2",
     "australiaeast" : "ae",
