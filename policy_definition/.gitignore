@@ -143,4 +143,4 @@ tfplan
 .DS_Store
 
 #Policy Files
-PolicyFiles/*
+#PolicyFiles/*

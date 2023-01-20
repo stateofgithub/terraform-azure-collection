@@ -1,5 +1,5 @@
 variable "location" {
-    type = string  
+  type = string
 }
 
 variable "eventhub" {
@@ -11,7 +11,7 @@ variable "eventhub_key" {
 }
 
 variable "management_group_id" {
-    type = string
+  type = string
 }
 
 variable "policy_set" {

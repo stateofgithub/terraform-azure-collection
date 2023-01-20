@@ -1,8 +1,8 @@
 locals {
-    json_files = fileset(path.module, "./PolicyFiles/*/azurepolicy.json")   
-    json_data  = flatten([ for f in local.json_files : jsondecode(file("${path.module}/${f}")) ])
-    ootb_policy_ids = ["/providers/Microsoft.Authorization/policyDefinitions/9a7c7a7d-49e5-4213-bea8-6a502b6272e0"] # sql datacases
-    policy_ids = concat([for o in azurerm_policy_definition.policy : o.id], local.ootb_policy_ids)
+  json_files      = fileset(path.module, "./PolicyFiles/*/azurepolicy.json")
+  json_data       = flatten([for f in local.json_files : jsondecode(file("${path.module}/${f}"))])
+  ootb_policy_ids = ["/providers/Microsoft.Authorization/policyDefinitions/9a7c7a7d-49e5-4213-bea8-6a502b6272e0"] # sql datacases
+  policy_ids      = concat([for o in azurerm_policy_definition.policy : o.id], local.ootb_policy_ids)
 }
 
 resource "azurerm_management_group" "observe_management_group" {
@@ -10,11 +10,11 @@ resource "azurerm_management_group" "observe_management_group" {
 }
 
 resource "azurerm_policy_definition" "policy" {
-  for_each = { for f in local.json_data : f.properties.displayName => f }
-  name         = "observe-${replace(split(" ", replace(each.value.properties.displayName, "Apply Diagnostic Settings for ", ""))[0], "/", "")}"
-  policy_type  = "Custom"
-  mode         = each.value.properties.mode
-  display_name = each.value.properties.displayName
+  for_each            = { for f in local.json_data : format("%s %s", "Observe", f.properties.displayName) => f }
+  name                = "observe-${replace(replace(regex("^[^\\.]*.(.*) to a Regional Event Hub", each.value.properties.displayName)[0], "/\\(|\\)|\\//", ""), "/\\s|\\./", "-")}"
+  policy_type         = "Custom"
+  mode                = each.value.properties.mode
+  display_name        = each.key
   management_group_id = azurerm_management_group.observe_management_group.id
 
   metadata = <<METADATA
@@ -26,19 +26,19 @@ resource "azurerm_policy_definition" "policy" {
   ${jsonencode(each.value.properties.policyRule)}
   POLICY_RULE
 
-
   parameters = <<PARAMETERS
   ${jsonencode(each.value.properties.parameters)}
   PARAMETERS
+
 }
 
 resource "azurerm_policy_set_definition" "observe_policy" {
-  name         = "sendToObserve"
-  policy_type  = "Custom"
-  display_name = "Apply Diagnostic Settings to Send to Observe)"
+  name                = "sendToObserve"
+  policy_type         = "Custom"
+  display_name        = "Apply Diagnostic Settings to Send to Observe)"
   management_group_id = azurerm_management_group.observe_management_group.id
 
-   parameters = <<PARAMETERS
+  parameters = <<PARAMETERS
     {
     "azureRegions": {
         "type": "Array",
@@ -93,10 +93,10 @@ resource "azurerm_policy_set_definition" "observe_policy" {
     PARAMETERS 
 
   dynamic "policy_definition_reference" {
-    for_each =  local.policy_ids
-    content { 
-        policy_definition_id = policy_definition_reference.value
-        parameter_values = (policy_definition_reference.value == "/providers/Microsoft.Authorization/policyDefinitions/9a7c7a7d-49e5-4213-bea8-6a502b6272e0" ?
+    for_each = local.policy_ids
+    content {
+      policy_definition_id = policy_definition_reference.value
+      parameter_values = (policy_definition_reference.value == "/providers/Microsoft.Authorization/policyDefinitions/9a7c7a7d-49e5-4213-bea8-6a502b6272e0" ?
         <<VALUE
             {
             "eventHubRuleId" : {"value": "[parameters('eventHubRuleId')]"},
@@ -114,8 +114,8 @@ resource "azurerm_policy_set_definition" "observe_policy" {
             "metricsEnabled": {"value": "[parameters('metricsEnabled')]"}
             }
         VALUE
-        )
+      )
 
-        }
+    }
   }
 }
