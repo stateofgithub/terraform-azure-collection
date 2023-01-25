@@ -219,30 +219,65 @@ output "eventhubs" {
 }
 
 output "eventhub_keys" {
-  #value = azurerm_eventhub_namespace_authorization_rule.observe_eventhub_access_policy
-  value = azurerm_eventhub_authorization_rule.observe_eventhub_access_policy
+  value = azurerm_eventhub_namespace_authorization_rule.observe_eventhub_access_policy
+  #value = azurerm_eventhub_authorization_rule.observe_eventhub_access_policy
 }
 
-resource "azurerm_sql_server" "joes_sql_server" {
-  name                         = "joesqlserver"
-  resource_group_name          = azurerm_resource_group.observe_resource_group.name
-  location                     = azurerm_resource_group.observe_resource_group.location
-  version                      = "12.0"
-  administrator_login          = "4dm1n157r470r"
-  administrator_login_password = "4-v3ry-53cr37-p455w0rd"
+# resource "azurerm_sql_server" "joes_sql_server" {
+#   name                         = "joesqlserver"
+#   resource_group_name          = azurerm_resource_group.observe_resource_group.name
+#   location                     = azurerm_resource_group.observe_resource_group.location
+#   version                      = "12.0"
+#   administrator_login          = "4dm1n157r470r"
+#   administrator_login_password = "4-v3ry-53cr37-p455w0rd"
 
-  tags = {
-    environment = "production"
-  }
-}
+#   tags = {
+#     environment = "production"
+#   }
+# }
 
-resource "azurerm_sql_database" "joes_sql_database" {
-  name                = "joesqldatabase"
-  resource_group_name = azurerm_resource_group.observe_resource_group.name
-  location            = azurerm_resource_group.observe_resource_group.location
-  server_name         = azurerm_sql_server.joes_sql_server.name
+# resource "azurerm_sql_database" "joes_sql_database" {
+#   name                = "joesqldatabase"
+#   resource_group_name = azurerm_resource_group.observe_resource_group.name
+#   location            = azurerm_resource_group.observe_resource_group.location
+#   server_name         = azurerm_sql_server.joes_sql_server.name
 
-  tags = {
-    environment = "production"
-  }
-}
+#   tags = {
+#     environment = "production"
+#   }
+# }
+
+# resource "azurerm_sql_server" "joes_sql_server2" {
+#   name                         = "joesqlserver2"
+#   resource_group_name          = azurerm_resource_group.observe_resource_group.name
+#   location                     = azurerm_resource_group.observe_resource_group.location
+#   version                      = "12.0"
+#   administrator_login          = "4dm1n157r470r"
+#   administrator_login_password = "4-v3ry-53cr37-p455w0rd"
+
+#   tags = {
+#     environment = "production"
+#   }
+# }
+
+# resource "azurerm_sql_database" "joes_sql_database2" {
+#   name                = "joesqldatabase2"
+#   resource_group_name = azurerm_resource_group.observe_resource_group.name
+#   location            = azurerm_resource_group.observe_resource_group.location
+#   server_name         = azurerm_sql_server.joes_sql_server2.name
+
+#   tags = {
+#     environment = "production"
+#   }
+# }
+
+# resource "azurerm_public_ip" "joes_public_ip" {
+#   name                = "acceptanceTestPublicIp1"
+#   resource_group_name = azurerm_resource_group.observe_resource_group.name
+#   location            = azurerm_resource_group.observe_resource_group.location
+#   allocation_method   = "Static"
+
+#   tags = {
+#     environment = "Production"
+#   }
+# }

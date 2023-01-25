@@ -2,7 +2,8 @@ locals {
   json_files      = fileset(path.module, "./PolicyFiles/*/azurepolicy.json")
   json_data       = flatten([for f in local.json_files : jsondecode(file("${path.module}/${f}"))])
   ootb_policy_ids = ["/providers/Microsoft.Authorization/policyDefinitions/9a7c7a7d-49e5-4213-bea8-6a502b6272e0"] # sql datacases
-  policy_ids      = concat([for o in azurerm_policy_definition.policy : o.id], local.ootb_policy_ids)
+  #policy_ids      = concat([for o in azurerm_policy_definition.policy : o.id], local.ootb_policy_ids)
+  policy_ids      = [for o in azurerm_policy_definition.policy : o.id]
 }
 
 resource "azurerm_management_group" "observe_management_group" {
