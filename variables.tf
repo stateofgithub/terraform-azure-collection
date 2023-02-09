@@ -11,7 +11,7 @@ variable "observe_token" {
 variable "observe_domain" {
   type        = string
   description = "Observe domain"
-  default = "observeinc.com"
+  default     = "observeinc.com"
 }
 
 # Based on NCRONTAB Expressions
@@ -29,6 +29,12 @@ variable "timer_vm_metrics_func_schedule" {
   default     = "30 */5 * * * *"
 }
 
+variable "func_url" {
+  type        = string
+  description = "Observe Collect Function source URL zip"
+  default     = "https://observeinc.s3.us-west-2.amazonaws.com/azure/azure-collection-functions-v0.1.0.zip"
+}
+
 # Use Name for value
 # https://azuretracks.com/2021/04/current-azure-region-names-reference/
 
@@ -41,7 +47,7 @@ variable "location" {
 variable "location_abbreviation" {
   type        = map(string)
   description = "A unique, short abbreviation to use for each location when assiging names to resources"
-  default     = {
+  default = {
     "australiacentral" : "ac",
     "australiacentral2" : "ac2",
     "australiaeast" : "ae",
