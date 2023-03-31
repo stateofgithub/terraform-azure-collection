@@ -38,38 +38,40 @@ resource "azurerm_key_vault" "key_vault" {
 
   sku_name = "standard"
 
-
-  access_policy {
-    tenant_id = data.azuread_client_config.current.tenant_id
-    object_id = data.azuread_client_config.current.object_id
-
-    secret_permissions = [
-      "Backup",
-      "Restore",
-      "Get",
-      "Set",
-      "List",
-      "Delete",
-      "Purge",
-    ]
-  }
-
-  access_policy {
-    tenant_id = data.azuread_client_config.current.tenant_id
-    object_id = lookup(azurerm_linux_function_app.observe_collect_function_app.identity[0], "principal_id")
-
-    secret_permissions = [
-      "Backup",
-      "Restore",
-      "Get",
-      "Set",
-      "List",
-      "Delete",
-      "Purge",
-    ]
-  }
-
 }
+
+resource "azurerm_key_vault_access_policy" "user" {
+  key_vault_id = azurerm_key_vault.key_vault.id
+  tenant_id    = data.azuread_client_config.current.tenant_id
+  object_id    = data.azuread_client_config.current.object_id
+
+  secret_permissions = [
+    "Backup",
+    "Restore",
+    "Get",
+    "Set",
+    "List",
+    "Delete",
+    "Purge",
+  ]
+}
+
+resource "azurerm_key_vault_access_policy" "app" {
+  key_vault_id = azurerm_key_vault.key_vault.id
+  tenant_id    = data.azuread_client_config.current.tenant_id
+  object_id    = lookup(azurerm_linux_function_app.observe_collect_function_app.identity[0], "principal_id")
+
+  secret_permissions = [
+    "Backup",
+    "Restore",
+    "Get",
+    "Set",
+    "List",
+    "Delete",
+    "Purge",
+  ]
+}
+
 
 resource "azurerm_key_vault_secret" "observe_token" {
   name         = "observe-token"
@@ -158,7 +160,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     AzureWebJobsDisableHomepage                   = true
     OBSERVE_DOMAIN                                = var.observe_domain
     OBSERVE_CUSTOMER                              = var.observe_customer
-    OBSERVE_TOKEN                                 = "@Microsoft.KeyVault(SecretUri=https://${local.keyvault_name}.vault.azure.net/secrets/observe-token/)"
+    OBSERVE_TOKEN                                 = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.observe_token.id})"
     AZURE_TENANT_ID                               = data.azuread_client_config.current.tenant_id
     AZURE_CLIENT_ID                               = azuread_application.observe_app_registration.application_id
     AZURE_CLIENT_SECRET                           = azuread_application_password.observe_password.value
