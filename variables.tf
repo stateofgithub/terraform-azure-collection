@@ -130,7 +130,7 @@ variable "location_abbreviation" {
 }
 
 variable "prevent_rg_deletion" {
-  type = bool
-  default = true
+  type        = bool
+  default     = true
   description = "Prevent resource group deletion if resource group is not empty.  Defaults to true."
 }
