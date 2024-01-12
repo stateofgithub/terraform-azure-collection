@@ -22,13 +22,11 @@ resource "azuread_application" "observe_app_registration" {
 
 # Creates an auth token that is used by the app to call APIs.
 resource "azuread_application_password" "observe_password" {
-  #application_object_id = azuread_application.observe_app_registration.object_id
   application_id = azuread_application.observe_app_registration.id
 }
 
 # Creates a Service "Principal" for the "observe" app.
 resource "azuread_service_principal" "observe_service_principal" {
-  #application_id = azuread_application.observe_app_registration.application_id
   client_id = azuread_application.observe_app_registration.client_id
 }
 
@@ -182,7 +180,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     OBSERVE_TOKEN                                 = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.observe_token.id})"
     AZURE_TENANT_ID                               = data.azuread_client_config.current.tenant_id
     AZURE_CLIENT_ID                               = azuread_application.observe_app_registration.client_id
-    AZURE_CLIENT_SECRET                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.observe_password.id}"
+    AZURE_CLIENT_SECRET                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.observe_password.id})"
     AZURE_CLIENT_LOCATION                         = lower(replace(var.location, " ", ""))
     timer_resources_func_schedule                 = var.timer_resources_func_schedule
     timer_vm_metrics_func_schedule                = var.timer_vm_metrics_func_schedule
