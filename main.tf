@@ -22,12 +22,12 @@ resource "azuread_application" "observe_app_registration" {
 
 # Creates an auth token that is used by the app to call APIs.
 resource "azuread_application_password" "observe_password" {
-  application_object_id = azuread_application.observe_app_registration.object_id
+  application_id = azuread_application.observe_app_registration.id
 }
 
 # Creates a Service "Principal" for the "observe" app.
 resource "azuread_service_principal" "observe_service_principal" {
-  application_id = azuread_application.observe_app_registration.application_id
+  client_id = azuread_application.observe_app_registration.client_id
 }
 
 resource "azurerm_key_vault" "key_vault" {
@@ -83,6 +83,18 @@ resource "azurerm_key_vault_secret" "observe_token" {
     azurerm_key_vault_access_policy.user,
   ]
 }
+
+resource "azurerm_key_vault_secret" "observe_password" {
+  name         = "observe-password"
+  value        = azuread_application_password.observe_password.value
+  key_vault_id = azurerm_key_vault.key_vault.id
+
+  # Required so the user running this can get the result of the call.
+  depends_on = [
+    azurerm_key_vault_access_policy.user,
+  ]
+}
+
 
 # Assigns the created service principal a role in current Azure Subscription.
 # https://learn.microsoft.com/en-us/azure/azure-monitor/roles-permissions-security#monitoring-reader
@@ -167,8 +179,8 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     OBSERVE_CUSTOMER                              = var.observe_customer
     OBSERVE_TOKEN                                 = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.observe_token.id})"
     AZURE_TENANT_ID                               = data.azuread_client_config.current.tenant_id
-    AZURE_CLIENT_ID                               = azuread_application.observe_app_registration.application_id
-    AZURE_CLIENT_SECRET                           = azuread_application_password.observe_password.value
+    AZURE_CLIENT_ID                               = azuread_application.observe_app_registration.client_id
+    AZURE_CLIENT_SECRET                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.observe_password.id})"
     AZURE_CLIENT_LOCATION                         = lower(replace(var.location, " ", ""))
     timer_resources_func_schedule                 = var.timer_resources_func_schedule
     timer_vm_metrics_func_schedule                = var.timer_vm_metrics_func_schedule
