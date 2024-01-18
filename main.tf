@@ -123,7 +123,6 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   }
 }
 
-##Issue with triggering this function (I think this doesn't have access to the function)
 resource "azurerm_eventhub" "observe_eventhub" {
   name                = "observeEventHub-${var.observe_customer}-${var.location}-${local.sub}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
@@ -158,8 +157,8 @@ resource "azurerm_storage_account" "observe_storage_account" {
   account_tier             = "Standard"
   account_replication_type = "LRS" # Probably want to use ZRS when we got prime time
 
-  public_network_access_enabled = true #Set to false before publishing
-  allow_nested_items_to_be_public = true #Set to false before pub 
+  public_network_access_enabled = false #Set to false before publishing
+  #allow_nested_items_to_be_public = true #Set to false before pub 
 
   min_tls_version = "TLS1_2"
   infrastructure_encryption_enabled = true
@@ -186,6 +185,8 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
 
   app_settings = {
     WEBSITE_RUN_FROM_PACKAGE                      = var.func_url
+    WEBSITE_CONTENTOVERVNET	                      = 1
+    WEBSITE_VNET_ROUTE_ALL                        = 1
     AzureWebJobsDisableHomepage                   = true
     OBSERVE_DOMAIN                                = var.observe_domain
     OBSERVE_CUSTOMER                              = var.observe_customer
