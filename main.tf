@@ -123,6 +123,7 @@ resource "azurerm_eventhub_namespace" "observe_eventhub_namespace" {
   }
 }
 
+##Issue with triggering this function (I think this doesn't have access to the function)
 resource "azurerm_eventhub" "observe_eventhub" {
   name                = "observeEventHub-${var.observe_customer}-${var.location}-${local.sub}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
