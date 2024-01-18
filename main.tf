@@ -147,6 +147,7 @@ resource "azurerm_service_plan" "observe_service_plan" {
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
   sku_name            = "Y1"
+  #worker_count = 1
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
@@ -155,6 +156,15 @@ resource "azurerm_storage_account" "observe_storage_account" {
   location                 = azurerm_resource_group.observe_resource_group.location
   account_tier             = "Standard"
   account_replication_type = "LRS" # Probably want to use ZRS when we got prime time
+
+  public_network_access_enabled = true #Set to false before publishing
+  allow_nested_items_to_be_public = true #Set to false before pub 
+
+  min_tls_version = "TLS1_2"
+  infrastructure_encryption_enabled = true
+  account_kind = "StorageV2"
+  is_hns_enabled = true
+
 }
 
 resource "azurerm_storage_container" "observe_storage_container" {
@@ -168,6 +178,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   service_plan_id     = azurerm_service_plan.observe_service_plan.id
+  #virtual_network_subnet_id = azurerm_subnet.observe_subnet.id
 
   storage_account_name       = azurerm_storage_account.observe_storage_account.name
   storage_account_access_key = azurerm_storage_account.observe_storage_account.primary_access_key
@@ -188,6 +199,9 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
     # Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
     # APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.observe_insights.instrumentation_key 
+    
+    #FOR DEBUGGING ONLY TURNED ON 
+    APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.observe_insights.instrumentation_key 
   }
 
   identity {
@@ -195,6 +209,10 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   }
 
   site_config {
+    #always_on = false
+    #elastic_instance_minimum = 1
+    #app_scale_limit = 5
+    #pre_warmed_instance_count = 1
     application_stack {
       python_version = "3.9"
     }
@@ -202,9 +220,12 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
 }
 
 # Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
-# resource "azurerm_application_insights" "observe_insights" {
-#   name                = "observeApplicationInsights"
-#   location            = azurerm_resource_group.observe_resource_group.location
-#   resource_group_name = azurerm_resource_group.observe_resource_group.name
-#   application_type    = "web"
-# }
+
+##FOR DEBUGGING ONLY 
+resource "azurerm_application_insights" "observe_insights" {
+  name                = "observeApplicationInsights"
+  location            = azurerm_resource_group.observe_resource_group.location
+  resource_group_name = azurerm_resource_group.observe_resource_group.name
+  application_type    = "web"
+}
+
