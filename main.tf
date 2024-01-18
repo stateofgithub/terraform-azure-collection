@@ -146,7 +146,7 @@ resource "azurerm_service_plan" "observe_service_plan" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
-  sku_name            = "Y1"
+  sku_name            = "EP1"
   #worker_count = 1
 }
 
@@ -210,9 +210,9 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
 
   site_config {
     #always_on = false
-    #elastic_instance_minimum = 1
+    elastic_instance_minimum = 1
     #app_scale_limit = 5
-    #pre_warmed_instance_count = 1
+    pre_warmed_instance_count = 1
     application_stack {
       python_version = "3.9"
     }
