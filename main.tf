@@ -157,8 +157,13 @@ resource "azurerm_storage_account" "observe_storage_account" {
   account_tier             = "Standard"
   account_replication_type = "LRS" # Probably want to use ZRS when we got prime time
 
-  public_network_access_enabled = false #Set to false before publishing
-  #allow_nested_items_to_be_public = true #Set to false before pub 
+  ## Note for function to work / storage account to set, set below to true first. 
+  ## Then when function works, & ready to publish, set to false
+  ## If below is not set, then TF will complain as 403! 
+  ## --> See # https://github.com/hashicorp/terraform-provider-azurerm/issues/2977
+
+  public_network_access_enabled = true #Set to false before publishing otherwise TF errors!! 
+  allow_nested_items_to_be_public = true 
 
   min_tls_version = "TLS1_2"
   infrastructure_encryption_enabled = true
@@ -166,7 +171,7 @@ resource "azurerm_storage_account" "observe_storage_account" {
   is_hns_enabled = true
 
 }
-
+# https://github.com/hashicorp/terraform-provider-azurerm/issues/2977
 resource "azurerm_storage_container" "observe_storage_container" {
   name                  = lower("container${var.observe_customer}${local.region}-${local.sub}")
   storage_account_name  = azurerm_storage_account.observe_storage_account.name
@@ -185,7 +190,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
 
   app_settings = {
     WEBSITE_RUN_FROM_PACKAGE                      = var.func_url
-    WEBSITE_CONTENTOVERVNET	                      = 1
+    #WEBSITE_CONTENTOVERVNET	                      = 1
     WEBSITE_VNET_ROUTE_ALL                        = 1
     AzureWebJobsDisableHomepage                   = true
     OBSERVE_DOMAIN                                = var.observe_domain
