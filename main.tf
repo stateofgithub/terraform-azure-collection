@@ -15,20 +15,20 @@ data "azuread_client_config" "current" {}
 data "azurerm_subscription" "primary" {}
 
 # https://petri.com/understanding-azure-app-registrations/#:~:text=Azure%20App%20registrations%20are%20an,to%20use%20an%20app%20registration.
-resource "azuread_application" "observe_app_registration" {
-  display_name = "observeApp-${var.observe_customer}-${var.location}-${local.sub}"
-  owners       = [data.azuread_client_config.current.object_id]
-}
+# resource "azuread_application" "observe_app_registration" {
+#   display_name = "observeApp-${var.observe_customer}-${var.location}-${local.sub}"
+#   owners       = [data.azuread_client_config.current.object_id]
+# }
 
-# Creates an auth token that is used by the app to call APIs.
-resource "azuread_application_password" "observe_password" {
-  application_id = azuread_application.observe_app_registration.id
-}
+# # Creates an auth token that is used by the app to call APIs.
+# resource "azuread_application_password" "observe_password" {
+#   application_id = azuread_application.observe_app_registration.id
+# }
 
-# Creates a Service "Principal" for the "observe" app.
-resource "azuread_service_principal" "observe_service_principal" {
-  client_id = azuread_application.observe_app_registration.client_id
-}
+# # Creates a Service "Principal" for the "observe" app.
+# resource "azuread_service_principal" "observe_service_principal" {
+#   client_id = azuread_application.observe_app_registration.client_id
+# }
 
 resource "azurerm_key_vault" "key_vault" {
   name                = local.keyvault_name
@@ -56,6 +56,7 @@ resource "azurerm_key_vault_access_policy" "user" {
   ]
 }
 
+#May also need this for app 
 resource "azurerm_key_vault_access_policy" "app" {
   key_vault_id = azurerm_key_vault.key_vault.id
   tenant_id    = data.azuread_client_config.current.tenant_id
@@ -84,26 +85,27 @@ resource "azurerm_key_vault_secret" "observe_token" {
   ]
 }
 
-resource "azurerm_key_vault_secret" "observe_password" {
-  name         = "observe-password"
-  value        = azuread_application_password.observe_password.value
-  key_vault_id = azurerm_key_vault.key_vault.id
+##Stores client secret 
+# resource "azurerm_key_vault_secret" "observe_password" {
+#   name         = "observe-password"
+#   value        = azuread_application_password.observe_password.value
+#   key_vault_id = azurerm_key_vault.key_vault.id
 
-  # Required so the user running this can get the result of the call.
-  depends_on = [
-    azurerm_key_vault_access_policy.user,
-  ]
-}
+#   # Required so the user running this can get the result of the call.
+#   depends_on = [
+#     azurerm_key_vault_access_policy.user,
+#   ]
+# }
 
-
+#Create this manually under Subscription >> IAM >> Monitorign Reader for App 
 # Assigns the created service principal a role in current Azure Subscription.
 # https://learn.microsoft.com/en-us/azure/azure-monitor/roles-permissions-security#monitoring-reader
 # https://learn.microsoft.com/en-us/azure/azure-monitor/roles-permissions-security#security-considerations-for-monitoring-data
-resource "azurerm_role_assignment" "observe_role_assignment" {
-  scope                = data.azurerm_subscription.primary.id
-  role_definition_name = "Monitoring Reader"
-  principal_id         = azuread_service_principal.observe_service_principal.object_id
-}
+# resource "azurerm_role_assignment" "observe_role_assignment" {
+#   scope                = data.azurerm_subscription.primary.id
+#   role_definition_name = "Monitoring Reader"
+#   principal_id         = azuread_service_principal.observe_service_principal.object_id
+# }
 
 resource "azurerm_resource_group" "observe_resource_group" {
   name     = "observeResources-${var.observe_customer}-${var.location}-${local.sub}"
@@ -179,8 +181,8 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     OBSERVE_CUSTOMER                              = var.observe_customer
     OBSERVE_TOKEN                                 = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.observe_token.id})"
     AZURE_TENANT_ID                               = data.azuread_client_config.current.tenant_id
-    AZURE_CLIENT_ID                               = azuread_application.observe_app_registration.client_id
-    AZURE_CLIENT_SECRET                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.observe_password.id})"
+    AZURE_CLIENT_ID                               = "e3f4a19b-4372-4af9-adc5-3af3fd3767a9"
+    AZURE_CLIENT_SECRET                           = "LuK8Q~MM16I7ZQUJiMjkejM.eYFgmAKB-pd_Iaas"
     AZURE_CLIENT_LOCATION                         = lower(replace(var.location, " ", ""))
     timer_resources_func_schedule                 = var.timer_resources_func_schedule
     timer_vm_metrics_func_schedule                = var.timer_vm_metrics_func_schedule
