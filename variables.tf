@@ -32,7 +32,9 @@ variable "timer_vm_metrics_func_schedule" {
 variable "func_url" {
   type        = string
   description = "Observe Collect Function source URL zip"
-  default     = "https://observeinc.s3.us-west-2.amazonaws.com/azure/azure-collection-functions-v0.10.0.zip"
+  #default     = "https://observeinc.s3.us-west-2.amazonaws.com/azure/azure-collection-functions-v0.10.0.zip"
+  #default      = "https://observeinc.s3.us-west-2.amazonaws.com/azure/azure-collection-functions-v0.10.1-dev.2%2Bmolina.f09c6af.zip"
+  default = "https://observeinc.s3.us-west-2.amazonaws.com/azure/azure-collection-functions-v0.10.1-dev.8%2Bjoao/ff.6228b4c.zip"
 }
 
 # Use Name for value

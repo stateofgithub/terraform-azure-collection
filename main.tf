@@ -14,21 +14,6 @@ data "azuread_client_config" "current" {}
 # Creates the alias of your Subscription to be used for association below.
 data "azurerm_subscription" "primary" {}
 
-# https://petri.com/understanding-azure-app-registrations/#:~:text=Azure%20App%20registrations%20are%20an,to%20use%20an%20app%20registration.
-# resource "azuread_application" "observe_app_registration" {
-#   display_name = "observeApp-${var.observe_customer}-${var.location}-${local.sub}"
-#   owners       = [data.azuread_client_config.current.object_id]
-# }
-
-# # Creates an auth token that is used by the app to call APIs.
-# resource "azuread_application_password" "observe_password" {
-#   application_id = azuread_application.observe_app_registration.id
-# }
-
-# # Creates a Service "Principal" for the "observe" app.
-# resource "azuread_service_principal" "observe_service_principal" {
-#   client_id = azuread_application.observe_app_registration.client_id
-# }
 
 resource "azurerm_key_vault" "key_vault" {
   name                = local.keyvault_name
@@ -85,17 +70,7 @@ resource "azurerm_key_vault_secret" "observe_token" {
   ]
 }
 
-##Stores client secret 
-# resource "azurerm_key_vault_secret" "observe_password" {
-#   name         = "observe-password"
-#   value        = azuread_application_password.observe_password.value
-#   key_vault_id = azurerm_key_vault.key_vault.id
 
-#   # Required so the user running this can get the result of the call.
-#   depends_on = [
-#     azurerm_key_vault_access_policy.user,
-#   ]
-# }
 
 #Create this manually under Subscription >> IAM >> Monitorign Reader for App 
 # Assigns the created service principal a role in current Azure Subscription.
@@ -134,7 +109,7 @@ resource "azurerm_eventhub" "observe_eventhub" {
 }
 
 resource "azurerm_eventhub_authorization_rule" "observe_eventhub_access_policy" {
-  name                = "observeSharedAccessPolicy-${var.observe_customer}-${var.location}-${local.sub}"
+  name                = "observeSharedAccessP-${var.observe_customer}-${var.location}-${local.sub}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   eventhub_name       = azurerm_eventhub.observe_eventhub.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
@@ -189,7 +164,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_NAME       = azurerm_eventhub.observe_eventhub.name
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
     # Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
-    # APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.observe_insights.instrumentation_key 
+    APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.observe_insights.instrumentation_key 
   }
 
   identity {
@@ -203,10 +178,13 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   }
 }
 
-# Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
-# resource "azurerm_application_insights" "observe_insights" {
-#   name                = "observeApplicationInsights"
-#   location            = azurerm_resource_group.observe_resource_group.location
-#   resource_group_name = azurerm_resource_group.observe_resource_group.name
-#   application_type    = "web"
-# }
+#Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
+resource "azurerm_application_insights" "observe_insights" {
+  name                = "observeApplicationInsights"
+  location            = azurerm_resource_group.observe_resource_group.location
+  resource_group_name = azurerm_resource_group.observe_resource_group.name
+  application_type    = "web"
+}
+
+# "!blob_services,!blob_containers"
+# https://observeinc.s3.us-west-2.amazonaws.com/azure/azure-collection-functions-v0.10.1-dev.5%2Bjoao/ff.d1a661e.zip
