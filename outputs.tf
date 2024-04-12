@@ -13,5 +13,5 @@ output "observe_customer" {
 }
 
 output "observe_location" {
-  value = var.location 
+  value = var.location
 }
