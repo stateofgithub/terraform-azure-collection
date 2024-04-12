@@ -45,9 +45,22 @@ jobs:
       with:
         terraform_wrapper: false
 
+    - name: Create Override providers file for backend   
+      shell: bash 
+      run: |
+          echo "::debug::${{ toJson(matrix) }}"
+          sudo apt-get install --quiet=2 --assume-yes jo
+          jo -p terraform=$(jo backend=$(jo azurerm={})) > override.tf.json
+
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terraform Init
-      run: terraform init
+     - name: Terraform Init
+        id: init
+        run: |
+          terraform init -no-color \
+            # -backend-config="resource_group_name=rg-terraform-github-actions-state"\
+            # -backend-config="storage_account_name=terraformgithubactions" \
+            # -backend-config="container_name="tfstate" \
+            # -backend-config="key=terraform.tfstate" 
 
   # Checks that all Terraform configuration files adhere to a canonical format
     # Will fail the build if not
