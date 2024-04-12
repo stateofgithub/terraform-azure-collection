@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - main
-  pull_request:   
+  pull_request:
+    types: ['opened', 'reopened', 'synchronize', 'ready_for_review']
   workflow_dispatch:
 
 #Special permissions required for OIDC authentication
