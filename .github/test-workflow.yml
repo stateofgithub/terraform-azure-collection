@@ -15,15 +15,11 @@ permissions:
   contents: read
   pull-requests: write
 
-# env:
-#   ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
-#   ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-#   ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
-
 env:
-  ARM_CLIENT_ID: "ae8e30a9-9a40-4d08-94f2-2950c925afa0"
-  ARM_SUBSCRIPTION_ID: "df9e45ea-4082-4855-9c9e-97d216efb6a4"
-  ARM_TENANT_ID: "81665909-a4e6-466b-9671-4d9ef491267f"
+  ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
+  ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+  ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
+
 
 jobs:
   terraform-plan:
