@@ -57,7 +57,7 @@ jobs:
       run: |
         terraform init -no-color \
           -backend-config="resource_group_name=rg-terraform-github-actions-state" \
-          -backend-config="storage_account_name=terraformgithubactions" \
+          -backend-config="storage_account_name=terraformazurecollection" \
           -backend-config="container_name=tfstate" \
           -backend-config="key=terraform.tfstate" 
 
