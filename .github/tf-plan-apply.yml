@@ -16,8 +16,12 @@ permissions:
 
 env:
   ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
+  ARM_CLIENT_SECRET: "${{ secrets.AZURE_CLIENT_SECRET }}"
   ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
   ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
+  TF_VAR_observe_customer: "${{ vars.OBSERVE_CUSTOMER}}"
+  TF_VAR_observe_domain: "${{ vars.OBSERVE_DOMAIN }}"
+  TF_VAR_observe_token: "${{ secrets.OBSERVE_TOKEN }}"
 
 
 jobs:
@@ -45,7 +49,7 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
-    # Checks that all Terraform configuration files adhere to a canonical format
+  # Checks that all Terraform configuration files adhere to a canonical format
     # Will fail the build if not
     - name: Terraform Format
       run: terraform fmt -check
