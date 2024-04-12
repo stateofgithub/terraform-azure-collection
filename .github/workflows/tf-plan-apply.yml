@@ -56,10 +56,10 @@ jobs:
       id: init
       run: |
         terraform init -no-color \
-           -backend-config="resource_group_name=rg-terraform-github-actions-state"\
-           -backend-config="storage_account_name=terraformgithubactions" \
-           -backend-config="container_name="tfstate" \
-           -backend-config="key=terraform.tfstate" 
+          -backend-config="resource_group_name=rg-terraform-github-actions-state" \
+          -backend-config="storage_account_name=terraformgithubactions" \
+          -backend-config="container_name=tfstate" \
+          -backend-config="key=terraform.tfstate" 
 
   # Checks that all Terraform configuration files adhere to a canonical format
     # Will fail the build if not
