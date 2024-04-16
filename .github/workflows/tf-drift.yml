@@ -78,12 +78,12 @@ jobs:
           exit 0
         fi
         
-    # Save plan to artifacts  
-    - name: Publish Terraform Plan
-      uses: actions/upload-artifact@v4
-      with:
-        name: tfplan
-        path: tfplan
+    # # Save plan to artifacts  
+    # - name: Publish Terraform Plan
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: tfplan
+    #     path: tfplan
         
     # Create string output of Terraform Plan
     - name: Create String Output
