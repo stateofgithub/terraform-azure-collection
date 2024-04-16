@@ -59,4 +59,4 @@ jobs:
         -backend-config="resource_group_name=rg-terraform-github-actions-state" \
         -backend-config="storage_account_name=citeststfazurecollection" \
         -backend-config="container_name=tfstate" \
-        -backend-config="key={{env.GITHUB_REF}}.tfstate" 
+        -backend-config="key=${{ env.GITHUB_REF }}.tfstate" 
