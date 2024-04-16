@@ -52,6 +52,11 @@ jobs:
         jo -p terraform=$(jo backend=$(jo azurerm={})) > override.tf.json
         printenv | grep GITHUB
 
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
+
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       id: init
@@ -60,4 +65,4 @@ jobs:
         -backend-config="resource_group_name=rg-terraform-github-actions-state" \
         -backend-config="storage_account_name=citeststfazurecollection" \
         -backend-config="container_name=tfstate" \
-        -backend-config="key=${{ env.GITHUB_REF }}.tfstate" 
+        -backend-config="key=GHA-${{ steps.extract_branch.outputs.branch }}.tfstate" 
