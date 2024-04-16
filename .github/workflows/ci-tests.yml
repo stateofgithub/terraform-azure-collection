@@ -49,7 +49,9 @@ jobs:
       shell: bash 
       run: |   
         sudo apt-get install --quiet=2 --assume-yes jo
-        jo -p terraform=$(jo backend=$(jo azurerm={})) > override.tf.json
+        #jo -p terraform=$(jo backend=$(jo azurerm={})) > override.tf.json
+        jo -p terraform=$(jo backend=$(jo azurerm={})) \
+                resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="rg-branchname"))) > override.tf.json
         printenv | grep GITHUB
 
     - name: Extract branch name
@@ -66,3 +68,4 @@ jobs:
         -backend-config="storage_account_name=citeststfazurecollection" \
         -backend-config="container_name=tfstate" \
         -backend-config="key=${{ steps.extract_branch.outputs.branch }}/.tfstate" 
+
