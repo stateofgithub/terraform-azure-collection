@@ -1,0 +1,62 @@
+name: 'Azure - CI Tests'
+#For now this will just create and destroy infrastructure 
+
+on:
+  workflow_dispatch: 
+  schedule:
+    - cron: '0 5 * * *' # runs nightly at 5am
+
+#Special permissions required for OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+#These environment variables are used by the terraform azure provider to setup OIDD authenticate. 
+env:
+  ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
+  ARM_CLIENT_SECRET: "${{ secrets.AZURE_CLIENT_SECRET }}"
+  ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+  ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
+  TF_VAR_observe_customer: "${{ vars.OBSERVE_CUSTOMER}}"
+  TF_VAR_observe_domain: "${{ vars.OBSERVE_DOMAIN }}"
+  TF_VAR_observe_token: "${{ secrets.OBSERVE_TOKEN_CI_TESTS }}"
+  TF_VAR_location: "centralus"  #CI Tests resource groups are created in centralus 
+
+jobs:
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    env:
+      #this is needed since we are running terraform with read-only permissions
+      ARM_SKIP_PROVIDER_REGISTRATION: true
+    outputs:
+      tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # Install the latest version of the Terraform CLI
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_wrapper: false
+
+
+    - name: Create Override providers file for backend   
+      shell: bash 
+      run: |   
+        sudo apt-get install --quiet=2 --assume-yes jo
+        jo -p terraform=$(jo backend=$(jo azurerm={})) > override.tf.json
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      id: init
+      run: |
+        terraform init -no-color \
+        -backend-config="resource_group_name=rg-ci-tests-terraform-github-actions-state" \
+        -backend-config="storage_account_name=citeststerraformazurecollection" \
+        -backend-config="container_name=tfstate" \
+        -backend-config="key={{env.GITHUB_REF}}.tfstate" 

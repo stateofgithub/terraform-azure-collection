@@ -1,4 +1,5 @@
 name: 'Terraform Configuration Drift Detection'
+#For Fixed Environment 
 
 on:
   workflow_dispatch: 
@@ -42,9 +43,23 @@ jobs:
       with:
         terraform_wrapper: false
 
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terraform Init
-      run: terraform init
+
+    
+    - name: Create Override providers file for backend   
+      shell: bash 
+      run: |   
+        sudo apt-get install --quiet=2 --assume-yes jo
+        jo -p terraform=$(jo backend=$(jo azurerm={})) > override.tf.json
+
+      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init -no-color \
+            -backend-config="resource_group_name=rg-terraform-github-actions-state" \
+            -backend-config="storage_account_name=terraformazurecollection" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=terraform.tfstate" 
 
     # Generates an execution plan for Terraform
     # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
