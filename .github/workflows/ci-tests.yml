@@ -1,0 +1,7 @@
+name: 'Azure - CI Tests'
+
+
+on:
+  workflow_dispatch: 
+  schedule:
+    - cron: '0 5 * * *' # runs nightly at 5am
