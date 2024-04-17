@@ -51,7 +51,7 @@ jobs:
         # remove special characters
         branch_remove_special="${branch//[-\/]}" 
         # concatinate to 20 characters
-        branch_concat="${branch_remove_special::0:20}" 
+        branch_concat="${branch_remove_special:0:20}" 
         # Append the concat branch name to $GITHUB_OUTPUT
         echo "branch_concat=${branch_concat}" >> $GITHUB_OUTPUT
 
