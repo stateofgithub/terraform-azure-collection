@@ -43,6 +43,7 @@ jobs:
       shell: bash
       run: |
          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" | tr '/' '-' >> $GITHUB_OUTPUT
+         echo "branch name is $branch"
          branch_remove_special="${branch//[-\/]}" # remove special characters
          branch_concat="${branch_remove_special::0:20}" # concatinate to 20 characters
          echo "branch_concat=${branch_concat}" >> $GITHUB_OUTPUT
