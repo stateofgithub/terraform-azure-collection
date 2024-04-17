@@ -1,8 +1,11 @@
 import json
 import os
 import re 
+from dotenv import load_dotenv
+load_dotenv()
 
 
+print(os.environ)
 
 # Extract branch name from either GITHUB_HEAD_REF or GITHUB_REF
 branch = os.getenv("GITHUB_HEAD_REF")
