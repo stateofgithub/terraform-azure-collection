@@ -43,16 +43,20 @@ jobs:
       id: extract_branch
       shell: bash
       run: |
-        # Extract branch name from GITHUB_REF
+        # Extract branch name from GITHUB_REF and save to $branch
         branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
         # Replace "/" with "-" in the branch name
         branch="${branch//\//-}"
         # Append the modified branch name to $GITHUB_OUTPUT
-        echo "branch=${branch}" >> "$GITHUB_OUTPUT"
+        echo "branch=${branch}" >> "$GITHUB_OUTPUT"  
+
+        # Convert branch name to lowercase, remove special characters, save to $branch_concat
         # remove special characters
         branch_remove_special="${branch//[-\/]}" 
+        # Convert to lowercase
+        branch_lowercase=$(echo "$branch_remove_special" | awk '{print tolower($0)}')
         # concatinate to 20 characters
-        branch_concat="${branch_remove_special:0:20}" 
+        branch_concat="${branch_lowercase:0:20}" 
         # Append the concat branch name to $GITHUB_OUTPUT
         echo "branch_concat=${branch_concat}" >> $GITHUB_OUTPUT
 
