@@ -44,21 +44,16 @@ jobs:
       run: |
         # Extract branch name from GITHUB_REF
         branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
-
         # Replace "/" with "-" in the branch name
         branch="${branch//\//-}"
-
         # Append the modified branch name to $GITHUB_OUTPUT
         echo "branch=${branch}" >> "$GITHUB_OUTPUT"
-
-        echo "branch name is $branch"
-
-
-        #  echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" | tr '/' '-' >> $GITHUB_OUTPUT
-        #  echo "branch name is $branch"
-        #  branch_remove_special="${branch//[-\/]}" # remove special characters
-        #  branch_concat="${branch_remove_special::0:20}" # concatinate to 20 characters
-        #  echo "branch_concat=${branch_concat}" >> $GITHUB_OUTPUT
+        # remove special characters
+        branch_remove_special="${branch//[-\/]}" 
+        # concatinate to 20 characters
+        branch_concat="${branch_remove_special::0:20}" 
+        # Append the concat branch name to $GITHUB_OUTPUT
+        echo "branch_concat=${branch_concat}" >> $GITHUB_OUTPUT
 
 
     # Install the latest version of the Terraform CLI
