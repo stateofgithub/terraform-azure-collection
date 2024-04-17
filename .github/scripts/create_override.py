@@ -1,11 +1,7 @@
 import json
 import os
 import re 
-from dotenv import load_dotenv
-load_dotenv()
 
-
-print(os.environ)
 
 print(  os.getenv("GITHUB_HEAD_REF"))
 print(  os.getenv("GITHUB_REF"))
