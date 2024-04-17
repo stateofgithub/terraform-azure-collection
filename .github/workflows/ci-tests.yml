@@ -38,6 +38,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # Create branch name and branch name with special characters removed for use in override file 
     - name: Extract branch name
       id: extract_branch
       shell: bash
@@ -75,9 +76,9 @@ jobs:
         
                 
         jo -p terraform=$(jo backend=$(jo azurerm={})) \
-                resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="rg-${{ steps.extract_branch.outputs.branch }}")) \
-                azuread_application=$(jo observe_app_registration=$(jo display_name="app-${{ steps.extract_branch.outputs.branch }}")) \
-                azurerm_storage_account=$(jo observe_storage_account=$(jo name="sa-${{ steps.extract_branch.outputs.branch_concat }}"))) > override.tf.json
+                resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="gh-rg-${{ steps.extract_branch.outputs.branch }}")) \
+                azuread_application=$(jo observe_app_registration=$(jo display_name="gh-app-${{ steps.extract_branch.outputs.branch }}")) \
+                azurerm_storage_account=$(jo observe_storage_account=$(jo name="ghsa${{ steps.extract_branch.outputs.branch_concat }}"))) > override.tf.json
         printenv | grep GITHUB
    
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
@@ -89,7 +90,6 @@ jobs:
         -backend-config="storage_account_name=citeststfazurecollection" \
         -backend-config="container_name=tfstate" \
         -backend-config="key=${{ steps.extract_branch.outputs.branch }}/.tfstate" 
-
 
 
     # Checks that all Terraform configuration files adhere to a canonical format
