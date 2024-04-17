@@ -7,6 +7,9 @@ load_dotenv()
 
 print(os.environ)
 
+print(  os.getenv("GITHUB_HEAD_REF"))
+print(  os.getenv("GITHUB_REF"))
+
 # Extract branch name from either GITHUB_HEAD_REF or GITHUB_REF
 branch = os.getenv("GITHUB_HEAD_REF")
 if branch is None:
