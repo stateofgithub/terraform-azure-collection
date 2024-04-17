@@ -55,8 +55,11 @@ jobs:
       shell: bash 
       run: |   
         sudo apt-get install --quiet=2 --assume-yes jo
+        # jo -p terraform=$(jo backend=$(jo azurerm={})) \
+        #         resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="rg-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
         jo -p terraform=$(jo backend=$(jo azurerm={})) \
-                resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="rg-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
+                resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="rg-${{ steps.extract_branch.outputs.branch }}")) \
+                jo azuread_application=$(jo observe_app_registration=$(jo name="app-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
         printenv | grep GITHUB
    
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
@@ -97,9 +100,9 @@ jobs:
       if: steps.tf-plan.outputs.exitcode == 1
       run: exit 1
 
-    # Terraform Apply if no errors in plan & changes detected 
-    - name: Terraform Apply     
-      if: steps.tf-plan.outputs.exitcode == 2
-      run: terraform apply -auto-approve tfplan
+    # # Terraform Apply if no errors in plan & changes detected 
+    # - name: Terraform Apply     
+    #   if: steps.tf-plan.outputs.exitcode == 2
+    #   run: terraform apply -auto-approve tfplan
 
 
