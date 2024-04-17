@@ -55,7 +55,6 @@ jobs:
       shell: bash 
       run: |   
         sudo apt-get install --quiet=2 --assume-yes jo
-        #jo -p terraform=$(jo backend=$(jo azurerm={})) > override.tf.json
         jo -p terraform=$(jo backend=$(jo azurerm={})) \
                 resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="rg-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
         printenv | grep GITHUB
