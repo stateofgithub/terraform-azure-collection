@@ -64,7 +64,7 @@ jobs:
         jo -p terraform=$(jo backend=$(jo azurerm={})) \
                 resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="rg-${{ steps.extract_branch.outputs.branch }}")) \
                 azuread_application=$(jo observe_app_registration=$(jo display_name="app-${{ steps.extract_branch.outputs.branch }}")) \
-                azuread_storage_account=$(jo observe_storage_account=$(jo name="sa-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
+                azurerm_storage_account=$(jo observe_storage_account=$(jo name="sa-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
         printenv | grep GITHUB
    
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
