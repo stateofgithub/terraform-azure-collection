@@ -58,7 +58,8 @@ jobs:
     - name: Create Override providers file for backend   
       shell: bash 
       run: |   
-        cat $GITHUB_OUTPUT
+        echo ${{ steps.extract_branch.outputs.branch }}
+        echo ${{ steps.extract_branch.outputs.branch_concat }}
         sudo apt-get install --quiet=2 --assume-yes jo
         
         
