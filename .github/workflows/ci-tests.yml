@@ -51,32 +51,26 @@ jobs:
         terraform_wrapper: false
 
 
-    # - name: Create Override providers file for backend   
-    #   shell: bash 
-    #   run: |   
-    #     sudo apt-get install --quiet=2 --assume-yes jo
-    #     jo -p terraform=$(jo backend=$(jo azurerm={})) \
-    #             resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="gha-rg-${{ steps.extract_branch.outputs.branch }}")) \
-    #             jo azuread_application=$(jo observe_app_registration=$(jo display_name="gha-app-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
-    #     printenv | grep GITHUB
+    - name: Create Override providers file for backend   
+      shell: bash 
+      run: |   
+        sudo apt-get install --quiet=2 --assume-yes jo
+        jo -p terraform=$(jo backend=$(jo azurerm={})) \
+                resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="gha-rg-${{ steps.extract_branch.outputs.branch }}")) \
+                jo azuread_application=$(jo observe_app_registration=$(jo display_name="gha-app-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
+        printenv | grep GITHUB
    
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    # - name: Terraform Init
-    #   id: init
-    #   run: |
-    #     terraform init -no-color \
-    #     -backend-config="resource_group_name=rg-terraform-github-actions-state" \
-    #     -backend-config="storage_account_name=citeststfazurecollection" \
-    #     -backend-config="container_name=tfstate" \
-    #     -backend-config="key=${{ steps.extract_branch.outputs.branch }}/.tfstate" 
-
-    - name: Terraform Init 
+    #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
       id: init
       run: |
-        cp .github/workflows/override.tf .
-        ls -l 
-        export TF_VAR_branch_name=${{ steps.extract_branch.outputs.branch }}
-        terraform init -no-color 
+        terraform init -no-color \
+        -backend-config="resource_group_name=rg-terraform-github-actions-state" \
+        -backend-config="storage_account_name=citeststfazurecollection" \
+        -backend-config="container_name=tfstate" \
+        -backend-config="key=${{ steps.extract_branch.outputs.branch }}/.tfstate" 
+
+
 
     # Checks that all Terraform configuration files adhere to a canonical format
     # Will fail the build if not
