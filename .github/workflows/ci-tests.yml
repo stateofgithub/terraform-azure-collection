@@ -39,10 +39,15 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Extract branch name
+      id: extract_branch
       shell: bash
       run: |
          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" | tr '/' '-' >> $GITHUB_OUTPUT
-      id: extract_branch
+         branch_remove_special="${branch//[-\/]}" # remove special characters
+         branch_concat="${branch_remove_special::0:20}" # concatinate to 20 characters
+         echo "branch_concat=${branch_concat}" >> $GITHUB_OUTPUT
+         cat $GITHUB_OUTPUT
+
 
     # Install the latest version of the Terraform CLI
     - name: Setup Terraform
@@ -55,6 +60,7 @@ jobs:
       shell: bash 
       run: |   
         sudo apt-get install --quiet=2 --assume-yes jo
+        
         
         # jo -p terraform=$(jo backend=$(jo azurerm={})) \
         #         resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="gha-rg-${{ steps.extract_branch.outputs.branch }}")) \
