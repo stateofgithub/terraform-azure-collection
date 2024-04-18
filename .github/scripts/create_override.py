@@ -52,17 +52,26 @@ config = {
         },
         "azuread_application": {
             "observe_app_registration": {
-                "display_name":  "gh-app-" + branch
+                "display_name":  "gh-app-" + branch,
+                "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         },
         "azurerm_storage_account": {
             "observe_storage_account": {
-                "name": "ghsa" + branch_concat
+                "name": "ghsa" + branch_concat,
+                "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         },
          "azurerm_key_vault": {
             "key_vault": {
-                "name": "gh-kv-" + branch_concat
+                "name": "gh-kv-" + branch_concat,
+                "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         },
          "azurerm_eventhub_namespace": {
@@ -72,23 +81,35 @@ config = {
         },
          "azurerm_eventhub": {
             "observe_eventhub": {
-                "name": "gh-eh-" + branch
+                "name": "gh-eh-" + branch,
+                "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         },
          "azurerm_eventhub_authorization_rule": {
             "observe_eventhub_access_policy": {
-                "name": "gh-ehap-" + branch
+                "name": "gh-ehap-" + branch,
+                "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         },
         "azurerm_service_plan": {
             "observe_service_plan": {
-                "name": "gh-sp-" + branch
+                "name": "gh-sp-" + branch,
+                "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         },
 
         "azurerm_linux_function_app": {
             "observe_collect_function_app": {
-                "name": "gh-fa-" + branch
+                "name": "gh-fa-" + branch,
+                "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         }
         
