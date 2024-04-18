@@ -32,17 +32,23 @@ jobs:
       observe_token: ${{ steps.generate-token.outputs.token }}
     defaults:
         run:
-          working-directory: ${{github.workspace}}/.github/scripts
+          working-directory: ${{github.workspace}}/.github/observe/scripts
     steps:
      # Install the latest version of the Terraform CLI
      - name: Checkout
        uses: actions/checkout@v4
+     - name: Extract branch name
+       shell: bash
+       run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+       id: extract_branch
      - name: Setup Terraform
        uses: hashicorp/setup-terraform@v3
        with:
         terraform_wrapper: false
      - name: Generate Token
        id: generate-token
+       env:
+         TF_VAR_branch: ${{ steps.extract_branch.outputs.branch }}
        run: |
         terraform init -no-color     
         terraform plan -detailed-exitcode -no-color -out tfplan || exit 1

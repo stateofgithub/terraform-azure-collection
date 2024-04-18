@@ -11,7 +11,7 @@ terraform {
 # Configure the observe provider
 provider "observe" {}
 
-# Look up existing workspace 
-data "observe_workspace" "default" {
-  name = "Default"
+resource "observe_datastream_token" "github_actions_branch_token" {
+  datastream = data.observe_datastream.example.oid
+  name       = var.branch
 }
