@@ -35,11 +35,12 @@ jobs:
           working-directory: ${{github.workspace}}/.github/scripts
     steps:
      # Install the latest version of the Terraform CLI
+     - name: Checkout
+       uses: actions/checkout@v4
      - name: Setup Terraform
        uses: hashicorp/setup-terraform@v3
        with:
         terraform_wrapper: false
-
      - name: Generate Token
        id: generate-token
        run: |
