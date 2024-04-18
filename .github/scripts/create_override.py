@@ -53,9 +53,8 @@ config = {
         "azuread_application": {
             "observe_app_registration": {
                 "display_name":  "gh-app-" + branch,
-                "tags": {
-                    "created_by": "terraform-ci"
-                }
+                "tags": ["terraform-ci"]                  
+                
             }
         },
         "azurerm_storage_account": {
