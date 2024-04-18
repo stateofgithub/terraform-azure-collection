@@ -58,13 +58,26 @@ jobs:
       uses: actions/setup-python@v5
       with:
          python-version: '3.10' 
-        
+       
+    # - name: Extract branch name
+    #   id: extract_branch
+    #   shell: bash 
+    #   run: |
+    #     # Extract branch name from GITHUB_REF and save to $branch
+    #     branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+    #     # Replace "/" with "-" in the branch name
+    #     branch="${branch//\//-}"
+    #     # Append the modified branch name to $GITHUB_OUTPUT
+    #     echo "branch=${branch}" >> "$GITHUB_OUTPUT"  
+
     - name: Create Override File
       working-directory: ${{github.workspace}} #Switch so override file is created at root 
       run: |      
        echo "Creating override.tf.json"
+       pwd 
        ls -l 
        python ${{github.workspace}}/.github/scripts/create_override_collection.py
+       python ${{github.workspace}}/.github/scripts/set_additional_tf_variables.py 
        printenv
        ls -l 
    
@@ -72,6 +85,7 @@ jobs:
     - name: Terraform Init
       id: init
       run: |
+        pwd
         terraform init -no-color     
 
     # Checks that all Terraform configuration files adhere to a canonical format
