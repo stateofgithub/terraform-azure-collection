@@ -54,6 +54,11 @@ config = {
             "observe_storage_account": {
                 "name": "ghsa" + branch_concat
             }
+        },
+         "azurerm_key_vault": {
+            "key_vault": {
+                "name": "gh-kv-" + branch_concat
+            }
         }
     }
 }
