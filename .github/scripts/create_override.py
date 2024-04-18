@@ -53,13 +53,7 @@ config = {
                 "container_name": "tfstate",
                 "key": branch + "/.tfstate"
             }
-        },
-        "required_providers": {
-        "observe": {
-            "source": "terraform.observeinc.com/observeinc/observe",
-            "version": ">= 0.13.3"
-            }
-        },               
+        },                      
     },
     "resource": {
         "azurerm_resource_group": {
