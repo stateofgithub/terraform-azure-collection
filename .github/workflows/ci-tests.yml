@@ -48,7 +48,7 @@ jobs:
      - name: Generate Token
        id: generate-token
        env:
-         TF_VAR_branch: ${{ steps.extract_branch.outputs.branch }}
+         TF_VAR_branch: "terrform-ci-${{ steps.extract_branch.outputs.branch }}"
        run: |
         terraform init -no-color     
         terraform plan -out tfplan 
