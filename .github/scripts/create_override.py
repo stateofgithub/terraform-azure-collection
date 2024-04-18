@@ -23,7 +23,7 @@ branch = branch.replace("refs/heads/", "").replace("/", "-")
 
 # Convert branch name to lowercase, remove special characters, and save to branch_concat
 # Remove special characters
-branch_concat = re.sub(r"[/\-]", "", branch).lower()[:20]
+branch_concat = re.sub(r"[/\-]", "", branch).lower()[:20] #Max 20 characters for branch name 
 
 
 
