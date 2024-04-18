@@ -7,7 +7,7 @@ print( "GITHUB_HEAD_REF: " + os.getenv("GITHUB_HEAD_REF"))
 print( "GITHUB_REF: " + os.getenv("GITHUB_REF"))
 
 # Extract branch name from either GITHUB_HEAD_REF or GITHUB_REF
-if os.getenv("GITHUB_HEAD_REF") is not None and os.getenv("GITHUB_HEAD_REF") is not '':
+if os.getenv("GITHUB_HEAD_REF") is not None and os.getenv("GITHUB_HEAD_REF") != '':
     branch = os.getenv("GITHUB_HEAD_REF")
 else:
     branch = os.getenv("GITHUB_REF")
