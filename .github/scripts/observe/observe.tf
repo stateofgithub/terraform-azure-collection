@@ -11,6 +11,10 @@ terraform {
 # Configure the observe provider
 provider "observe" {}
 
+data "observe_workspace" "default" {
+  name = "Default"
+}
+
 data "observe_datastream" "azure" {
   workspace = data.observe_workspace.default.oid
   name      = "Azure"
