@@ -74,8 +74,23 @@ config = {
             "observe_eventhub": {
                 "name": "gh-eh-" + branch
             }
-        }
+        },
+         "azurerm_eventhub_authorization_rule": {
+            "observe_eventhub_access_policy": {
+                "name": "gh-ehap-" + branch
+            }
+        },
+        "azurerm_service_plan": {
+            "observe_service_plan": {
+                "name": "gh-sp-" + branch
+            }
+        },
 
+        "azurerm_linux_function_app": {
+            "observe_collect_function_app": {
+                "name": "gh-fa-" + branch
+            }
+        }
         
     }
 }
