@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    observe = {
-      source  = "terraform.observeinc.com/observeinc/observe"
-     version = ">= 0.13.3"
-    }
-  }
-}
-
 # Configure the observe provider
 provider "observe" {}
 
