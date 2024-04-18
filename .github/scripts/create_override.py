@@ -62,12 +62,12 @@ config = {
         },
          "azurerm_key_vault": {
             "key_vault": {
-                "name": "gh-kv-" + branch
+                "name": "gh-kv-" + branch_concat
             }
         },
          "azurerm_eventhub_namespace": {
             "observe_eventhub_namespace": {
-                "name": "gh-ehns-" + branch
+                "name": "gh-ehns-" + branch_concat
             }
         },
          "azurerm_eventhub": {
