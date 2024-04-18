@@ -64,6 +64,7 @@ jobs:
        ls -l 
        python ${{github.workspace}}/.github/scripts/create_override.py
        printenv
+       ls -l 
    
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
