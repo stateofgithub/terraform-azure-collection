@@ -1,4 +1,5 @@
 terraform {
+  backend "azurerm" {}
   required_providers {
     observe = {
       source  = "terraform.observeinc.com/observeinc/observe"
