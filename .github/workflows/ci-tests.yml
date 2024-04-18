@@ -42,7 +42,6 @@ jobs:
         terraform_wrapper: false
      - name: Extract branch name
        id: extract_branch
-       shell: bash 
        run: |
           echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
      - name: Generate Token
