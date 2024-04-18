@@ -39,7 +39,7 @@ config = {
     "resource": {
         "azurerm_resource_group": {
             "observe_resource_group": {
-                "name": "gh-rg" + branch
+                "name": "gh-rg-" + branch
             }
         },
         "azuread_application": {
