@@ -51,7 +51,7 @@ jobs:
          TF_VAR_branch: ${{ steps.extract_branch.outputs.branch }}
        run: |
         terraform init -no-color     
-        terraform plan -detailed-exitcode -no-color -out tfplan || exit 1
+        terraform plan -out tfplan 
         terraform apply -auto-approve tfplan
         export token=$(terraform output -raw observe_token)
         echo "observe_token=$token" >> $GITHUB_OUTPUT
