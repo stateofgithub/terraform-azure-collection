@@ -52,7 +52,7 @@ jobs:
          python-version: '3.10' 
         
     - name: Create Override File
-      run: pip install python-dotenv && python .github/scripts/create_override.py
+      run:  python .github/scripts/create_override.py
       
     # # Create branch name and branch name with special characters removed for use in override file 
     # - name: Extract branch name

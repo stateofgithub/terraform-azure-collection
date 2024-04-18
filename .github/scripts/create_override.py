@@ -7,36 +7,26 @@ print( "GITHUB_HEAD_REF: " + os.getenv("GITHUB_HEAD_REF"))
 print( "GITHUB_REF: " + os.getenv("GITHUB_REF"))
 
 # Extract branch name from either GITHUB_HEAD_REF or GITHUB_REF
-branch = os.getenv("GITHUB_HEAD_REF")
-if branch is None:
-    branch = os.getenv("GITHUB_REF", "")
-branch = branch.replace("refs/heads/", "")
+if os.getenv("GITHUB_HEAD_REF") is not None and os.getenv("GITHUB_HEAD_REF") is not '':
+    branch = os.getenv("GITHUB_HEAD_REF")
+else:
+    branch = os.getenv("GITHUB_REF")
 
+
+# Remove /refs/heads/ from the branch name
 # Replace "/" with "-" in the branch name
-branch = branch.replace("/", "-")
+# Example: refs/heads/nikhil/add-CI-OB-29418 becomes nikhil-add-CI-OB-29418
+branch = branch.replace("refs/heads/", "").replace("/", "-")
 
-
-# Append the modified branch name to GITHUB_OUTPUT
-if os.getenv("CI"):
-    with open(os.getenv("GITHUB_OUTPUT"), "a") as f:
-        f.write(f"branch={branch}\n")
 
 # Convert branch name to lowercase, remove special characters, and save to branch_concat
 # Remove special characters
-branch_remove_special = re.sub(r"[/\-]", "", branch)
-# Convert to lowercase
-branch_lowercase = branch_remove_special.lower()
-# Concatenate to 20 characters
-branch_concat = branch_lowercase[:20]
+branch_concat = re.sub(r"[/\-]", "", branch).lower()[:20]
 
-# Append the concat branch name to GITHUB_OUTPUT
-if os.getenv("CI"):
-    with open(os.getenv("GITHUB_OUTPUT"), "a") as f:
-        f.write(f"branch_concat={branch_concat}\n")
+
 
 print (f"Branch name: {branch}")
 print (f"Branch name concat: {branch_concat}")
-
 
 
 # Define the JSON structure
