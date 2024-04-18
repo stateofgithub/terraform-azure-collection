@@ -14,14 +14,19 @@ permissions:
 
 #These environment variables are used by the terraform azure provider to setup OIDD authenticate. 
 env:
-  ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
-  ARM_CLIENT_SECRET: "${{ secrets.AZURE_CLIENT_SECRET }}"
-  ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-  ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
-  TF_VAR_observe_customer: "${{ vars.OBSERVE_CUSTOMER}}"
-  TF_VAR_observe_domain: "${{ vars.OBSERVE_DOMAIN }}"
-  TF_VAR_observe_token: "${{ secrets.OBSERVE_TOKEN_CI_TESTS }}"
+  ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}" # Needed for azure provider service account 
+  ARM_CLIENT_SECRET: "${{ secrets.AZURE_CLIENT_SECRET }}" # Needed for azure provider service account 
+  ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}" # Needed for azure provider service account 
+  ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}" # Needed for azure provider service account  
+  TF_VAR_observe_customer: "${{ vars.OBSERVE_CUSTOMER}}" #Fed to terraform-azure-collection 
+  TF_VAR_observe_domain: "${{ vars.OBSERVE_DOMAIN }}" #Fed to terraform-azure-collection 
+  #TF_VAR_observe_token: "${{ secrets.OBSERVE_TOKEN_CI_TESTS }}" #Fed to terraform-azure-collection 
   TF_VAR_location: "centralus"  #CI Tests resource groups are created in centralus 
+  OBSERVE_CUSTOMER: ${{ vars.OBSERVE_CUSTOMER}} #Needed for observe.tf
+  OBSERVE_DOMAIN: ${{ vars.OBSERVE_DOMAIN}} #Needed for observe.tf
+  OBSERVE_USER_EMAIL: ${{ secrets.OBSERVE_USER_EMAIL}} #Needed for observe.tf
+  OBSERVE_USER_PASSWORD: ${{ secrets.OBSERVE_USER_PASSWORD}} #Needed for observe.tf
+  
 
 jobs:
   ci-tests-ephemeral:
@@ -54,6 +59,7 @@ jobs:
     - name: Create Override File
       run: |
        python .github/scripts/create_override.py   
+       mv .github/scripts/observe.tf . 
    
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
