@@ -39,15 +39,11 @@ jobs:
      - name: Setup Terraform
        uses: hashicorp/setup-terraform@v3
        with:
-        terraform_wrapper: false
-     - name: Extract branch name
-       id: extract_branch
-       run: |
-          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        terraform_wrapper: false     
      - name: Generate Token
        id: generate-token
-       env:
-         TF_VAR_branch: ${{ steps.extract_branch.outputs.branch }}
+    #    env:
+    #      TF_VAR_branch: ${{ steps.extract_branch.outputs.branch }}
        run: |
         terraform init -no-color     
         terraform plan -detailed-exitcode -no-color -out tfplan || exit 1
