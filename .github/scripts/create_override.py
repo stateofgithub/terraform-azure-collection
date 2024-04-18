@@ -75,7 +75,10 @@ config = {
         },
          "azurerm_eventhub_namespace": {
             "observe_eventhub_namespace": {
-                "name": "gh-ehns-" + branch_concat
+                "name": "gh-ehns-" + branch_concat,
+                 "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         },
          "azurerm_eventhub": {
