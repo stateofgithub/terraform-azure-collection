@@ -44,13 +44,22 @@ jobs:
        id: extract_branch
        shell: bash 
        run: |
-          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+         # Extract branch name from GITHUB_REF and save to $branch
+         branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+         # Replace "/" with "-" in the branch name
+         branch="${branch//\//-}"
+         # Append the modified branch name to $GITHUB_OUTPUT
+         echo "branch=${branch}" >> "$GITHUB_OUTPUT"  
      - name: Generate Token
        id: generate-token
        env:
-         TF_VAR_branch: "terrform-ci-${{ steps.extract_branch.outputs.branch }}"
+         TF_VAR_branch: "terraform-ci-${{ steps.extract_branch.outputs.branch }}"
        run: |
-        terraform init -no-color     
+        terraform init -no-color \
+            -backend-config="resource_group_name=rg-terraform-github-actions-state" \
+            -backend-config="storage_account_name="citeststfazurecollection" \
+            -backend-config="container_name=observetfstate" \
+            -backend-config="key=${{ steps.extract_branch.outputs.branch }} + "/.tfstate"                 
         terraform plan -out tfplan 
         terraform apply -auto-approve tfplan
         export token=$(terraform output -raw observe_token)
