@@ -44,9 +44,12 @@ jobs:
      - name: Generate Token
        id: generate-token
        run: |
-         ls -l 
-         echo "Here"
-      
+        terraform init -no-color     
+        terraform plan -detailed-exitcode -no-color -out tfplan || exit 1
+        terraform apply -auto-approve tfplan
+        export token=$(terraform output -raw observe_token)
+        echo "observe_token=$token" >> $GITHUB_OUTPUT
+    
 
   ci-tests-ephemeral:
     name: 'Collection CI Tests'
