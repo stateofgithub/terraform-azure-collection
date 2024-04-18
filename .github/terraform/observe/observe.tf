@@ -1,5 +1,4 @@
-terraform {
-  backend "azurerm" {}
+terraform { 
   required_providers {
     observe = {
       source  = "terraform.observeinc.com/observeinc/observe"
@@ -9,8 +8,6 @@ terraform {
   required_version = ">= 1.0"
 }
 
-# Configure the observe provider
-provider "observe" {}
 
 data "observe_workspace" "default" {
   name = "Default"

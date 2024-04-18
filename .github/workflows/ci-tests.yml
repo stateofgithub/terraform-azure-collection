@@ -22,61 +22,23 @@ env:
   OBSERVE_DOMAIN: ${{ vars.OBSERVE_DOMAIN}} #Needed for observe.tf
   OBSERVE_USER_EMAIL: ${{ secrets.OBSERVE_USER_EMAIL}} #Needed for observe.tf
   OBSERVE_USER_PASSWORD: ${{ secrets.OBSERVE_USER_PASSWORD}} #Needed for observe.tf
+  TF_VAR_observe_customer: "${{ vars.OBSERVE_CUSTOMER}}" #Fed to terraform-azure-collection 
+  TF_VAR_observe_domain: "${{ vars.OBSERVE_DOMAIN }}" #Fed to terraform-azure-collection 
+  TF_VAR_location: "centralus"  #CI Tests resource groups are created in centralus 
   
 
 jobs:
-  generate-observe-token:
-    name: 'Generate Observe Token'
-    runs-on: ubuntu-latest
-    outputs:
-      observe_token: ${{ steps.generate-token.outputs.token }}
-    defaults:
-        run:
-          working-directory: ${{github.workspace}}/.github/scripts/observe
-    steps:
-     - name: Checkout
-       uses: actions/checkout@v4     
-     - name: Setup Terraform
-       uses: hashicorp/setup-terraform@v3
-       with:
-        terraform_wrapper: false
-     - name: Extract branch name
-       id: extract_branch
-       shell: bash 
-       run: |
-         # Extract branch name from GITHUB_REF and save to $branch
-         branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
-         # Replace "/" with "-" in the branch name
-         branch="${branch//\//-}"
-         # Append the modified branch name to $GITHUB_OUTPUT
-         echo "branch=${branch}" >> "$GITHUB_OUTPUT"  
-     - name: Generate Token
-       id: generate-token
-       env:
-         TF_VAR_branch: "terraform-ci-${{ steps.extract_branch.outputs.branch }}"
-       run: |
-        terraform init -no-color \
-            -backend-config="resource_group_name=rg-terraform-github-actions-state" \
-            -backend-config="storage_account_name=citeststfazurecollection" \
-            -backend-config="container_name=observetfstate" \
-            -backend-config="key=${{ steps.extract_branch.outputs.branch }}/.tfstate"                 
-        terraform plan -out tfplan 
-        terraform apply -auto-approve tfplan
-        export token=$(terraform output -raw observe_token)
-        echo "observe_token=$token" >> $GITHUB_OUTPUT
     
-
   ci-tests-ephemeral:
     name: 'Collection CI Tests'
     runs-on: ubuntu-latest
-    needs: generate-observe-token
+    defaults:
+        run:
+            working-directory: ${{github.workspace}}/.github/terraform
     env:
       #this is needed since we are running terraform with read-only permissions
       ARM_SKIP_PROVIDER_REGISTRATION: true
-      TF_VAR_observe_customer: "${{ vars.OBSERVE_CUSTOMER}}" #Fed to terraform-azure-collection 
-      TF_VAR_observe_domain: "${{ vars.OBSERVE_DOMAIN }}" #Fed to terraform-azure-collection 
-      TF_VAR_observe_token: "${{ needs.generate-observe-token.outputs.observe_token }}" #Fed to terraform-azure-collection 
-      TF_VAR_location: "centralus"  #CI Tests resource groups are created in centralus 
+     
     outputs:
       tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
 
@@ -99,7 +61,8 @@ jobs:
         
     - name: Create Override File
       run: |
-       python .github/scripts/create_override.py   
+       ls -l 
+       python ${{github.workspace}}/.github/scripts/create_override.py
        printenv
    
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
@@ -136,10 +99,10 @@ jobs:
       if: steps.tf-plan.outputs.exitcode == 1
       run: exit 1
 
-    # Terraform Apply if no errors in plan & changes detected 
-    - name: Terraform Apply     
-      if: steps.tf-plan.outputs.exitcode == 2
-      run: terraform apply -auto-approve tfplan
+    # # Terraform Apply if no errors in plan & changes detected 
+    # - name: Terraform Apply     
+    #   if: steps.tf-plan.outputs.exitcode == 2
+    #   run: terraform apply -auto-approve tfplan
 
       
     # # Terraform Destroy 
