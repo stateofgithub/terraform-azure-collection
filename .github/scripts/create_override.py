@@ -39,7 +39,10 @@ config = {
     "resource": {
         "azurerm_resource_group": {
             "observe_resource_group": {
-                "name": "gh-rg-" + branch
+                "name": "gh-rg-" + branch,
+                "tags": {
+                    "created_by": "terraform-ci"
+                }
             }
         },
         "azuread_application": {
