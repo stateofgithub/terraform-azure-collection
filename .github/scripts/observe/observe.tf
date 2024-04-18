@@ -11,7 +11,12 @@ terraform {
 # Configure the observe provider
 provider "observe" {}
 
+data "observe_datastream" "azure" {
+  workspace = data.observe_workspace.default.oid
+  name      = "Azure"
+}
+
 resource "observe_datastream_token" "github_actions_branch_token" {
-  datastream = data.observe_datastream.example.oid
+  datastream = data.observe_datastream.azure.oid
   name       = var.branch
 }
