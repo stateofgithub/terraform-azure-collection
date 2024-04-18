@@ -60,9 +60,11 @@ jobs:
          python-version: '3.10' 
         
     - name: Create Override File
-      run: |
+      working-directory: ${{github.workspace}} #Switch so override file is created at root 
+      run: |      
+       echo "Creating override.tf.json"
        ls -l 
-       python ${{github.workspace}}/.github/scripts/create_override.py
+       python ${{github.workspace}}/.github/scripts/create_override_collection.py
        printenv
        ls -l 
    
