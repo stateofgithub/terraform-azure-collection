@@ -24,8 +24,8 @@ env:
   TF_VAR_location: "centralus"  #CI Tests resource groups are created in centralus 
 
 jobs:
-  terraform-plan:
-    name: 'Terraform Plan'
+  ci-tests-ephemeral:
+    name: 'Collection CI Tests'
     runs-on: ubuntu-latest
     env:
       #this is needed since we are running terraform with read-only permissions
@@ -53,58 +53,13 @@ jobs:
         
     - name: Create Override File
       run:  python .github/scripts/create_override.py
-      
-    # # Create branch name and branch name with special characters removed for use in override file 
-    # - name: Extract branch name
-    #   id: extract_branch
-    #   shell: bash
-    #   run: |
-    #     # Extract branch name from GITHUB_REF and save to $branch
-    #     branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
-    #     # Replace "/" with "-" in the branch name
-    #     branch="${branch//\//-}"
-    #     # Append the modified branch name to $GITHUB_OUTPUT
-    #     echo "branch=${branch}" >> "$GITHUB_OUTPUT"  
-
-    #     # Convert branch name to lowercase, remove special characters, save to $branch_concat
-    #     # remove special characters
-    #     branch_remove_special="${branch//[-\/]}" 
-    #     # Convert to lowercase
-    #     branch_lowercase=$(echo "$branch_remove_special" | awk '{print tolower($0)}')
-    #     # concatinate to 20 characters
-    #     branch_concat="${branch_lowercase:0:20}" 
-    #     # Append the concat branch name to $GITHUB_OUTPUT
-    #     echo "branch_concat=${branch_concat}" >> $GITHUB_OUTPUT
-
-
-
-    # - name: Create Override providers file for backend   
-    #   shell: bash 
-    #   run: |   
-    #     sudo apt-get install --quiet=2 --assume-yes jo
-        
-        
-    #     # jo -p terraform=$(jo backend=$(jo azurerm={})) \
-    #     #         resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="gha-rg-${{ steps.extract_branch.outputs.branch }}")) \
-    #     #         jo azuread_application=$(jo observe_app_registration=$(jo display_name="gha-app-${{ steps.extract_branch.outputs.branch }}"))) > override.tf.json
-        
-                
-    #     jo -p terraform=$(jo backend=$(jo azurerm={})) \
-    #             resource=$(jo azurerm_resource_group=$(jo observe_resource_group=$(jo name="gh-rg-${{ steps.extract_branch.outputs.branch }}")) \
-    #             azuread_application=$(jo observe_app_registration=$(jo display_name="gh-app-${{ steps.extract_branch.outputs.branch }}")) \
-    #             azurerm_storage_account=$(jo observe_storage_account=$(jo name="ghsa${{ steps.extract_branch.outputs.branch_concat }}"))) > override.tf.json
-    #     printenv | grep GITHUB
+   
    
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       id: init
       run: |
-        terraform init -no-color \
-        -backend-config="resource_group_name=rg-terraform-github-actions-state" \
-        -backend-config="storage_account_name=citeststfazurecollection" \
-        -backend-config="container_name=tfstate" \
-        -backend-config="key=${{ steps.extract_branch.outputs.branch }}/.tfstate" 
-
+        terraform init -no-color     
 
     # Checks that all Terraform configuration files adhere to a canonical format
     # Will fail the build if not

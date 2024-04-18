@@ -33,7 +33,12 @@ print (f"Branch name concat: {branch_concat}")
 config = {
     "terraform": {
         "backend": {
-            "azurerm": {}
+            "azurerm": {
+                "resource_group_name": "rg-terraform-github-actions-state",
+                "storage_account_name": "citeststfazurecollection",
+                "container_name": "tfstate",
+                "key": branch + "/.tfstate"
+            }
         }
     },
     "resource": {
