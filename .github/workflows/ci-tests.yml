@@ -134,14 +134,14 @@ jobs:
       if: steps.tf-plan.outputs.exitcode == 1
       run: exit 1
 
-    # # Terraform Apply if no errors in plan & changes detected 
-    # - name: Terraform Apply     
-    #   if: steps.tf-plan.outputs.exitcode == 2
-    #   run: terraform apply -auto-approve tfplan
+    # Terraform Apply if no errors in plan & changes detected 
+    - name: Terraform Apply     
+      if: steps.tf-plan.outputs.exitcode == 2
+      run: terraform apply -auto-approve tfplan
 
-    # Terraform Destroy 
-    - name: Terraform Destroy 
-      run: terraform destroy -auto-approve 
+    # # Terraform Destroy 
+    # - name: Terraform Destroy 
+    #   run: terraform destroy -auto-approve 
 
 
   
