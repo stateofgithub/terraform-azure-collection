@@ -142,9 +142,9 @@ jobs:
       run: terraform apply -auto-approve tfplan
 
       
-    # # Terraform Destroy 
-    # - name: Terraform Destroy 
-    #   run: terraform destroy -auto-approve 
+    # Terraform Destroy 
+    - name: Terraform Destroy 
+      run: terraform destroy -auto-approve 
 
 
   
