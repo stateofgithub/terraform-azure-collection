@@ -203,7 +203,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
 
 
 resource "azurerm_eventhub_namespace_authorization_rule" "observe_eventhub_namespace_access_policy" {
-  name                = "observeSharedAccessPolicy-namespace-${var.observe_customer}-${var.location}-${local.sub}"
+  name                = "observeSharedAccessPolicy-ns-${var.observe_customer}-${var.location}-${local.sub}"
   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
   resource_group_name = azurerm_resource_group.observe_resource_group.name
 
