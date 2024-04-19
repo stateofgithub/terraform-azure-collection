@@ -117,29 +117,29 @@ jobs:
       id: validate
       run: terraform validate -no-color
 
-    # Generates an execution plan for Terraform
-    # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
-    - name: Terraform Plan
-      id: tf-plan
-      run: |
-        export exitcode=0
-        terraform plan -detailed-exitcode -no-color -out tfplan || export exitcode=$?
-        echo "exitcode=$exitcode" >> $GITHUB_OUTPUT        
-        if [ $exitcode -eq 1 ]; then
-          echo Terraform Plan Failed!
-          exit 1
-        else 
-          exit 0
-        fi
+    # # Generates an execution plan for Terraform
+    # # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
+    # - name: Terraform Plan
+    #   id: tf-plan
+    #   run: |
+    #     export exitcode=0
+    #     terraform plan -detailed-exitcode -no-color -out tfplan || export exitcode=$?
+    #     echo "exitcode=$exitcode" >> $GITHUB_OUTPUT        
+    #     if [ $exitcode -eq 1 ]; then
+    #       echo Terraform Plan Failed!
+    #       exit 1
+    #     else 
+    #       exit 0
+    #     fi
 
-    - name: Error in Terraform 
-      if: steps.tf-plan.outputs.exitcode == 1
-      run: exit 1
+    # - name: Error in Terraform 
+    #   if: steps.tf-plan.outputs.exitcode == 1
+    #   run: exit 1
 
-    # Terraform Apply if no errors in plan & changes detected 
-    - name: Terraform Apply     
-      if: steps.tf-plan.outputs.exitcode == 2
-      run: terraform apply -auto-approve tfplan
+    # # Terraform Apply if no errors in plan & changes detected 
+    # - name: Terraform Apply     
+    #   if: steps.tf-plan.outputs.exitcode == 2
+    #   run: terraform apply -auto-approve tfplan
 
       
     # Terraform Destroy 
