@@ -71,9 +71,7 @@ jobs:
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       id: init
-      run: |
-        echo "TF_VAR_branch is ${{ env.TF_VAR_branch }}"   
-  
+      run: |      
         terraform init -no-color \
           -backend-config="resource_group_name=rg-terraform-github-actions-state" \
           -backend-config="storage_account_name=citeststfazurecollection" \
@@ -109,10 +107,10 @@ jobs:
       if: steps.tf-plan.outputs.exitcode == 1
       run: exit 1
 
-    # # Terraform Apply if no errors in plan & changes detected 
-    # - name: Terraform Apply     
-    #   if: steps.tf-plan.outputs.exitcode == 2
-    #   run: terraform apply -auto-approve tfplan
+    # Terraform Apply if no errors in plan & changes detected 
+    - name: Terraform Apply     
+      if: steps.tf-plan.outputs.exitcode == 2
+      run: terraform apply -auto-approve tfplan
 
       
     # # Terraform Destroy 
