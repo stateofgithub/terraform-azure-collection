@@ -64,16 +64,15 @@ jobs:
       run: |      
        echo "Creating override.tf.json" 
        python ${{github.workspace}}/.github/scripts/create_override_collection.py
+       echo "Setting additional TF_VAR variables"
        python ${{github.workspace}}/.github/scripts/set_additional_tf_variables.py 
-       echo "TF_VAR_branch is ${{ env.TF_VAR_branch }}"     
-       printenv
       
    
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       id: init
       run: |
-        echo "Setting additional TF_VAR variables"
+        echo "TF_VAR_branch is ${{ env.TF_VAR_branch }}"   
   
         terraform init -no-color \
           -backend-config="resource_group_name=rg-terraform-github-actions-state" \
