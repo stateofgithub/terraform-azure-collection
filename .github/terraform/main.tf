@@ -13,3 +13,7 @@ module "terraform-azure-collection" {
 
 }
 
+terraform {
+  backend "azurerm" {}
+}
+
