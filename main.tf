@@ -211,6 +211,7 @@ resource "azurerm_monitor_diagnostic_setting" "observe_collect_function_app" {
   enabled_log {
     category = "FunctionAppLogs"
   }
+}
 
 # }
 
