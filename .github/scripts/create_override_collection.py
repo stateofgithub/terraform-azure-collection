@@ -45,16 +45,6 @@ function_app_name = "gh-fa-" + branch
 # Define the JSON structure
 ## See https://learn.microsoft.com/en-us/answers/questions/1437283/azure-policy-issue
 config = {
-    "terraform": {
-        "backend": {
-            "azurerm": {
-                "resource_group_name": "rg-terraform-github-actions-state",
-                "storage_account_name": "citeststfazurecollection",
-                "container_name": "tfstate",
-                "key": branch + "/.tfstate"
-            }
-        },                      
-    },
     "resource": {
         "azurerm_resource_group": {
             "observe_resource_group": {

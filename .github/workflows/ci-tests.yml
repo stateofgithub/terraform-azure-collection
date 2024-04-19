@@ -72,9 +72,14 @@ jobs:
       id: init
       run: |
         echo "Setting additional TF_VAR variables"
-        echo "TF_VAR_branch is ${{ env.TF_VAR_branch }}"
         python ${{github.workspace}}/.github/scripts/set_additional_tf_variables.py 
-        terraform init -no-color     
+        echo "TF_VAR_branch is ${{ env.TF_VAR_branch }}"
+        terraform init -no-color \
+          -backend-config="resource_group_name=rg-terraform-github-actions-state" \
+          -backend-config="storage_account_name=citeststfazurecollection" \
+          -backend-config="container_name=observetfstate" \
+          -backend-config="key=${{  env.TF_VAR_branch }}/.tfstate"    
+
 
     # Checks that all Terraform configuration files adhere to a canonical format
     # Will fail the build if not
