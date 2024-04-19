@@ -72,6 +72,7 @@ jobs:
       id: init
       run: |
         echo "Setting additional TF_VAR variables"
+        echo "TF_VAR_branch is ${{ env.TF_VAR_branch }}"
         python ${{github.workspace}}/.github/scripts/set_additional_tf_variables.py 
         terraform init -no-color     
 
