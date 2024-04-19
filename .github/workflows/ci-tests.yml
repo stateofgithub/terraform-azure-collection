@@ -83,11 +83,11 @@ jobs:
     # Checks that all Terraform configuration files adhere to a canonical format
     # Will fail the build if not
     - name: Terraform Format
-      if: github.event.pull_request.state == 'open'
+      if: github.event.pull_request.state != 'closed'
       run: terraform fmt -check
 
     - name: Terraform Validate
-      if: github.event.pull_request.state == 'open'
+      if: github.event.pull_request.state != 'closed'
       id: validate
       run: terraform validate -no-color
 
@@ -95,7 +95,7 @@ jobs:
     # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
     - name: Terraform Plan
       id: tf-plan
-      if: github.event.pull_request.state == 'open'
+      if: github.event.pull_request.state != 'closed'
       run: |
         export exitcode=0
         terraform plan -detailed-exitcode -no-color -out tfplan || export exitcode=$?
@@ -108,12 +108,12 @@ jobs:
         fi
 
     - name: Error in Terraform 
-      if: steps.tf-plan.outputs.exitcode == 1  && github.event.pull_request.state == 'open'
+      if: steps.tf-plan.outputs.exitcode == 1  && github.event.pull_request.state != 'closed'
       run: exit 1
 
     # Terraform Apply if no errors in plan & changes detected 
     - name: Terraform Apply     
-      if: steps.tf-plan.outputs.exitcode == 2 && github.event.pull_request.state == 'open'
+      if: steps.tf-plan.outputs.exitcode == 2 && github.event.pull_request.state != 'closed'
       run: terraform apply -auto-approve tfplan
 
       
