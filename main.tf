@@ -208,11 +208,11 @@ resource "azurerm_eventhub_namespace_authorization_rule" "observe_eventhub_names
   resource_group_name = azurerm_resource_group.observe_resource_group.name
 
   listen = true
-  send   = false
-  manage = false
+  send   = true 
+  manage = true 
 }
 
-
+## TODO: Figure out how to use Root Access NS Auth rule Policy (instea of creating this rule above)
 resource "azurerm_monitor_diagnostic_setting" "observe_collect_function_app" {
   name                           = "observeAppDiagnosticSetting-${var.observe_customer}-${var.location}-${local.sub}"
   target_resource_id             = azurerm_linux_function_app.observe_collect_function_app.id
