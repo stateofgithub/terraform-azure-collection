@@ -1,3 +1,7 @@
+locals {
+  branch = var.branch
+}
+
 module "observe" {
   source = "./observe/"
   branch = var.branch
@@ -18,7 +22,7 @@ terraform {
     resource_group_name = "rg-terraform-github-actions-state"
     storage_account_name = "citeststfazurecollection"
     container_name = "tfstate"
-    key = var.branch + "/.tfstate"
+    key = local.branch + "/.tfstate"
   }
 }
 
