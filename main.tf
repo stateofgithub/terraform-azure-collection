@@ -201,16 +201,18 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   }
 }
 
+
+
 resource "azurerm_monitor_diagnostic_setting" "observe_collect_function_app" {
   name                           = "observeAppDiagnosticSetting-${var.observe_customer}-${var.location}-${local.sub}"
   target_resource_id             = azurerm_linux_function_app.observe_collect_function_app.id
   eventhub_name                  = azurerm_eventhub.observe_eventhub.name
-  eventhub_authorization_rule_id = azurerm_eventhub_namespace.observe_eventhub_namespace.id
+  eventhub_authorization_rule_id = azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.id
   enabled_log {
     category = "FunctionAppLogs"
   }
 
-}
+# }
 
 # Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
 # resource "azurerm_application_insights" "observe_insights" {
