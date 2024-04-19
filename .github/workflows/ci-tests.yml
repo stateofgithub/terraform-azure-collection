@@ -72,7 +72,7 @@ jobs:
       id: init
       run: |
         echo "Setting additional TF_VAR variables"
-        #python ${{github.workspace}}/.github/scripts/set_additional_tf_variables.py 
+        python ${{github.workspace}}/.github/scripts/set_additional_tf_variables.py 
         terraform init -no-color     
 
     # Checks that all Terraform configuration files adhere to a canonical format
