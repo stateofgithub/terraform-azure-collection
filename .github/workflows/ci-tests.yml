@@ -2,9 +2,10 @@ name: 'Azure - CI Tests'
 #For now this will just create and destroy infrastructure 
 
 on:
-  workflow_dispatch: 
-  schedule:
-    - cron: '0 5 * * *' # runs nightly at 5am
+  pull_request:
+    types: [reopened, opened, synchronize, edited, closed]
+
+
 
 #Special permissions required for OIDC authentication
 permissions:
@@ -113,11 +114,13 @@ jobs:
       run: terraform apply -auto-approve tfplan
 
       
-    # # Terraform Destroy 
-    # - name: Terraform Destroy 
-    #   run: terraform destroy -auto-approve 
-
-
+    # Terraform Destroy 
+    - name: Terraform Destroy 
+      if: github.event.pull_request.merged == true || github.event.pull_request.state == 'closed' 
+      run: |
+        echo "PR ${{ github.event.number }} has been closed or merged" 
+        echo "Destroying infrastructure"
+        terraform destroy -auto-approve 
   
 
 
