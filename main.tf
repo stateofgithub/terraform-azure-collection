@@ -202,22 +202,28 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
 }
 
 
-resource "azurerm_eventhub_namespace_authorization_rule" "observe_eventhub_namespace_access_policy" {
-  name                = "observeSharedAccessPolicy-ns-${var.observe_customer}-${var.location}-${local.sub}"
-  namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
-  resource_group_name = azurerm_resource_group.observe_resource_group.name
+# resource "azurerm_eventhub_namespace_authorization_rule" "observe_eventhub_namespace_access_policy" {
+#   name                = "observeSharedAccessPolicy-ns-${var.observe_customer}-${var.location}-${local.sub}"
+#   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
+#   resource_group_name = azurerm_resource_group.observe_resource_group.name
 
-  listen = true
-  send   = true 
-  manage = true 
+#   listen = true
+#   send   = true 
+#   manage = true 
+# }
+
+data "azurerm_eventhub_namespace_authorization_rule" "root_namespace_access_policy" {
+  name                = "RootManageSharedAccessKey"
+  resource_group_name =  azurerm_resource_group.observe_resource_group.name
+  namespace_name      =  azurerm_eventhub_namespace.observe_eventhub_namespace.name
 }
 
-## TODO: Figure out how to use Root Access NS Auth rule Policy (instea of creating this rule above)
+## TODO: Figure out how to use Root Access NS Auth rulegit Policy (instea of creating this rule above)
 resource "azurerm_monitor_diagnostic_setting" "observe_collect_function_app" {
   name                           = "observeAppDiagnosticSetting-${var.observe_customer}-${var.location}-${local.sub}"
   target_resource_id             = azurerm_linux_function_app.observe_collect_function_app.id
   eventhub_name                  = azurerm_eventhub.observe_eventhub.name
-  eventhub_authorization_rule_id = azurerm_eventhub_namespace_authorization_rule.observe_eventhub_namespace_access_policy.id
+  eventhub_authorization_rule_id = data.azurerm_eventhub_namespace_authorization_rule.root_namespace_access_policy.id
   enabled_log {
     category = "FunctionAppLogs"
   }
