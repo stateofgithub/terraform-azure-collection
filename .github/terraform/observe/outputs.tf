@@ -6,10 +6,10 @@ output "observe_token" {
 
 output "observe_token_id" {
   description = "Observe Token ID for Ephemeral Branch"
-  value       = observe_datastream_token.github_actions_branch_token.id 
+  value       = observe_datastream_token.github_actions_branch_token.id
 }
 
 output "azure_datastream_id" {
   description = "Azure Datastream"
-  value       = data.observe_datastream.azure.id 
+  value       = data.observe_datastream.azure.id
 } 

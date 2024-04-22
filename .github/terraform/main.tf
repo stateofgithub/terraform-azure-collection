@@ -2,11 +2,13 @@ locals {
   branch = var.branch
 }
 
+#Create a datastream token in Observe
 module "observe" {
   source = "./observe/"
   branch = var.branch
 }
 
+#After token is created, fed to terraform-azure-collection (at root) as input variable 
 
 module "terraform-azure-collection" {
   source                  = "../../"
