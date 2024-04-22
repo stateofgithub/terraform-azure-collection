@@ -117,6 +117,7 @@ jobs:
       if: steps.tf-plan.outputs.exitcode == 2 && github.event.pull_request.state != 'closed'
       run: |
         terraform apply -auto-approve tfplan
+        terraform output 
         terraform_output=$(terraform output -json)
         observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
         azure_datastream_id=$(echo $terraform_output | jq -r '.azure_datastream_id.value')
