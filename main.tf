@@ -220,7 +220,6 @@ resource "azurerm_monitor_diagnostic_setting" "observe_collect_function_app" {
 }
 
 
-# }
 
 # Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
 # resource "azurerm_application_insights" "observe_insights" {
