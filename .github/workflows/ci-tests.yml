@@ -120,9 +120,9 @@ jobs:
         terraform output 
         terraform_output=$(terraform output -json)
         observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
-        azure_datastream_id=$(echo $terraform_output | jq -r '.azure_datastream_id.value')
+        azure_datasetid=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
         echo OBSERVE_TOKEN_ID=$observe_token_id >> $GITHUB_ENV
-        echo AZURE_DATASTREAM_ID=$azure_datastream_id >> $GITHUB_ENV     
+        echo AZURE_DATASET_ID=$azure_dataset_id >> $GITHUB_ENV     
   
 
     - name: Test
