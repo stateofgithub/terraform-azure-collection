@@ -112,11 +112,12 @@ jobs:
       run: exit 1
 
     # Terraform Apply if no errors in plan & changes detected 
-    - name: Terraform Apply     
+    - name: Terraform Apply 
+      id: tf-apply    
       if: steps.tf-plan.outputs.exitcode == 2 && github.event.pull_request.state != 'closed'
       run: |
         terraform apply -auto-approve tfplan
-        terraform_output=$(tf output -json)
+        terraform_output=$(terraform output -json)
         observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
         azure_datastream_id=$(echo $terraform_output | jq -r '.azure_datastream_id.value')
         echo OBSERVE_TOKEN_ID=$observe_token_id >> $GITHUB_ENV
@@ -124,7 +125,7 @@ jobs:
   
 
     - name: Test
-      if:  github.event.pull_request.state != 'closed'
+      if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
       run: |      
         printenv
 
