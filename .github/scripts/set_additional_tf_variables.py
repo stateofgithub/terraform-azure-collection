@@ -28,3 +28,5 @@ print (f"Branch name concat: {branch_concat}")
 env_file = os.getenv('GITHUB_ENV')
 with open(env_file, "a") as myfile:
     myfile.write("TF_VAR_branch=" + branch)
+
+print ("TF_VAR_branch set to " + branch + "for .github/terraform/main.tf")
