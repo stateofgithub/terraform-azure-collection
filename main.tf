@@ -201,24 +201,15 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   }
 }
 
-
-# resource "azurerm_eventhub_namespace_authorization_rule" "observe_eventhub_namespace_access_policy" {
-#   name                = "observeSharedAccessPolicy-ns-${var.observe_customer}-${var.location}-${local.sub}"
-#   namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
-#   resource_group_name = azurerm_resource_group.observe_resource_group.name
-
-#   listen = true
-#   send   = true 
-#   manage = true 
-# }
-
+#### Event Hub Debug 
 data "azurerm_eventhub_namespace_authorization_rule" "root_namespace_access_policy" {
   name                = "RootManageSharedAccessKey"
-  resource_group_name =  azurerm_resource_group.observe_resource_group.name
-  namespace_name      =  azurerm_eventhub_namespace.observe_eventhub_namespace.name
+  resource_group_name = azurerm_resource_group.observe_resource_group.name
+  namespace_name      = azurerm_eventhub_namespace.observe_eventhub_namespace.name
 }
 
 resource "azurerm_monitor_diagnostic_setting" "observe_collect_function_app" {
+  count                          = var.function_app_debug_logs ? 1 : 0
   name                           = "observeAppDiagnosticSetting-${var.observe_customer}-${var.location}-${local.sub}"
   target_resource_id             = azurerm_linux_function_app.observe_collect_function_app.id
   eventhub_name                  = azurerm_eventhub.observe_eventhub.name
