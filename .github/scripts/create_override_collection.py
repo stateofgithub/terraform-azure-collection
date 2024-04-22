@@ -125,6 +125,15 @@ config = {
                     "branch": branch
                 }
             }
+        },
+        "azurerm_monitor_diagnostic_setting": {
+            "observe_collect_function_app": {
+                "name": "gh-fa-ds-" + branch,
+                "tags": {
+                    "created_by": "terraform-ci",
+                    "branch": branch
+                }
+            }
         }
         
     }
