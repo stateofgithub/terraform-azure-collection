@@ -4,7 +4,7 @@ output "observe_token_id" {
   value       = module.observe.observe_token_id
 }
 
-output "azure_datastream_id" {
-  description = "Azure Datastream"
-  value       = module.observe.azure_datastream_id
+output "azure_dataset_id" {
+  description = "Azure Dataset Id"
+  value       = module.observe.azure_dataset_id
 } 

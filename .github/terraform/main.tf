@@ -1,6 +1,4 @@
-locals {
-  branch = var.branch
-}
+
 
 #Create a datastream token in Observe
 module "observe" {

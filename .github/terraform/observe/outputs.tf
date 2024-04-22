@@ -9,7 +9,7 @@ output "observe_token_id" {
   value       = observe_datastream_token.github_actions_branch_token.id
 }
 
-output "azure_datastream_id" {
+output "azure_dataset_id" {
   description = "Azure Datastream"
-  value       = data.observe_datastream.azure.id
+  value       = data.observe_dataset.azure.id
 } 

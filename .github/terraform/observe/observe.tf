@@ -18,6 +18,12 @@ data "observe_datastream" "azure" {
   name      = "Azure"
 }
 
+data "observe_dataset" "azure" {
+  workspace = data.observe_workspace.default.oid
+  name      = "Azure"
+}
+
+#Create a new token with branch name under "Azure" Datastream 
 resource "observe_datastream_token" "github_actions_branch_token" {
   datastream = data.observe_datastream.azure.oid
   name       = var.branch
