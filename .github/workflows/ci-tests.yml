@@ -123,7 +123,6 @@ jobs:
     - name: Data Validation Test
       if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
       run: |      
-        printenv
         terraform_output=$(terraform output -json)    
         observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
         azure_dataset_id=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
