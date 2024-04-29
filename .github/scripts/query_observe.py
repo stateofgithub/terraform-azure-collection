@@ -274,6 +274,16 @@ if __name__ == '__main__':
 
     setup_logger(log_level, log_format)
 
+    logger.info("Validating Azure Data")
+    logger.info("------------------------------------")
+    logger.info("Customer ID: {}".format(os.environ.get("OBSERVE_CUSTOMER")))
+    logger.info("Domain: {}".format(os.environ.get("OBSERVE_DOMAIN")))    
+    logger.info("Dataset ID: {}".format(os.environ.get("AZURE_DATASET_ID")))        
+    logger.info("Observe Token ID: {}".format(os.environ.get("OBSERVE_TOKEN_ID")))
+    logger.info("------------------------------------\n")
+
+
+
     eh = validate_azure_data(source='EventHub', stale_checks_mins=30, query_interval="30m")
     rm = validate_azure_data(source='ResourceManagement', stale_checks_mins=30, query_interval="30m")
     vm_metrics = validate_azure_data(source='VmMetrics', stale_checks_mins=30, query_interval="30m")
