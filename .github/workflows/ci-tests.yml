@@ -129,6 +129,10 @@ jobs:
       if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
       run: |      
         printenv
+        echo "Running Data Valiadation Tests...."
+        pip install requests 
+        python ${{github.workspace}}/.github/scripts/query_observe.py
+
 
     # Terraform Destroy 
     - name: Terraform Destroy 
