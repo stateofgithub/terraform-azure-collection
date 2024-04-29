@@ -38,7 +38,7 @@ def get_bearer_token() -> str:
     user_email = os.environ.get("OBSERVE_USER_EMAIL")
     user_password = os.environ.get("OBSERVE_USER_PASSWORD")
 
-    url = f"https://{customer_id}.{domain}.com/v1/login"
+    url = f"https://{customer_id}.{domain}/v1/login"
 
     message = '{"user_email":"$user_email$","user_password":"$user_password$", "tokenName":"terraform-azure-collection"}'
     tokens_to_replace = {
@@ -72,7 +72,7 @@ def send_query(bearer_token: str, query: str, params: dict = None, url_extension
     domain = os.environ.get("OBSERVE_DOMAIN")
 
     # Set the GraphQL API endpoint URL
-    url = f"https://{customer_id}.{domain}.com/v1/meta{url_extension}"
+    url = f"https://{customer_id}.{domain}/v1/meta{url_extension}"
 
     # Set the headers (including authentication)
     headers = {
