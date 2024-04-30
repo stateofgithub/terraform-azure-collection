@@ -118,32 +118,32 @@ jobs:
       run: |
         terraform apply -auto-approve tfplan       
 
-    - name: Data Validation Test 
-      uses: nick-fields/retry@v3
-      if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
-      with:
-        timeout_minutes: 30
-        max_attempts: 1 #1 attempt/minute = 30 attempts 
-        shell: bash
-        retry_wait_seconds: 60 
-        command: |
-          terraform_output=$(terraform output -json)    
-          observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
-          azure_dataset_id=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
-          export OBSERVE_TOKEN_ID=$observe_token_id 
-          export AZURE_DATASET_ID=$azure_dataset_id        
-          pip install requests && python ${{github.workspace}}/.github/scripts/query_observe.py
+    # - name: Data Validation Test 
+    #   uses: nick-fields/retry@v3
+    #   if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
+    #   with:
+    #     timeout_minutes: 30
+    #     max_attempts: 1 #1 attempt/minute = 30 attempts 
+    #     shell: bash
+    #     retry_wait_seconds: 60 
+    #     command: |
+    #       terraform_output=$(terraform output -json)    
+    #       observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
+    #       azure_dataset_id=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
+    #       export OBSERVE_TOKEN_ID=$observe_token_id 
+    #       export AZURE_DATASET_ID=$azure_dataset_id        
+    #       pip install requests && python ${{github.workspace}}/.github/scripts/query_observe.py
     
 
-    # - name: Data Validation Test
-    #   if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
-    #   run: |      
-    #     terraform_output=$(terraform output -json)    
-    #     observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
-    #     azure_dataset_id=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
-    #     export OBSERVE_TOKEN_ID=$observe_token_id 
-    #     export AZURE_DATASET_ID=$azure_dataset_id        
-    #     pip install requests && python ${{github.workspace}}/.github/scripts/query_observe.py
+    - name: Data Validation Test
+      if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
+      run: |      
+        terraform_output=$(terraform output -json)    
+        observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
+        azure_dataset_id=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
+        export OBSERVE_TOKEN_ID=$observe_token_id 
+        export AZURE_DATASET_ID=$azure_dataset_id        
+        pip install requests && python ${{github.workspace}}/.github/scripts/query_observe.py
 
 
     # Terraform Destroy 
