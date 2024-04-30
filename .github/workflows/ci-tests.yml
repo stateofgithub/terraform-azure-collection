@@ -130,7 +130,7 @@ jobs:
         echo "AZURE_DATASET_ID=$azure_dataset_id" >> $GITHUB_ENV
         
     - name: Data Validation Test 
-      uses: nick-fields/retry@v2.9.0
+      uses: nick-fields/retry@v3
       if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
       with:
         timeout_minutes: 30
