@@ -26,7 +26,7 @@ env:
   TF_VAR_observe_customer: "${{ vars.OBSERVE_CUSTOMER}}" #Fed to terraform-azure-collection 
   TF_VAR_observe_domain: "${{ vars.OBSERVE_DOMAIN }}" #Fed to terraform-azure-collection 
   TF_VAR_location: "centralus"  #CI Tests resource groups are created in centralus 
-  
+  TF_VAR_prevent_rg_deletion: "false" #CI Tests resource groups can be delete in a destroy 
 
 jobs:
     
