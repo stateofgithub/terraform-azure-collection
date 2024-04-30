@@ -123,7 +123,7 @@ jobs:
       if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
       with:
         timeout_minutes: 30
-        max_attempts: 30 #1 attempt/minute 
+        max_attempts: 1 #1 attempt/minute = 30 attempts 
         retry_wait_seconds: 60 
         command: |
           terraform_output=$(terraform output -json)    
