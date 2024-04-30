@@ -136,8 +136,8 @@ jobs:
       if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
       with:
         timeout_minutes: 30
-        max_attempts: 30 #1 attempt/minute = 30 attempts 
-        retry_wait_seconds: 60  
+        max_attempts: 40 #Max 40 attempts (resource data can take longer depending on when the next cron job runs)
+        retry_wait_seconds: 60  #1 attempt/minute
         command: |
             pip install requests && python ${{github.workspace}}/.github/scripts/query_observe.py
 
