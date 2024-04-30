@@ -125,19 +125,19 @@ jobs:
         terraform_output=$(terraform output -json)  
         observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
         azure_dataset_id=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
-        export "OBSERVE_TOKEN_ID=$observe_token_id" >> $GITHUB_ENV
-        export "AZURE_DATASET_ID=$azure_dataset_id" >> $GITHUB_ENV
+        echo "OBSERVE_TOKEN_ID=$observe_token_id" >> $GITHUB_ENV
+        echo "AZURE_DATASET_ID=$azure_dataset_id" >> $GITHUB_ENV
         echo $terraform_output
         
-    # - name: Data Validation Test 
-    #   uses: nick-fields/retry@v2.9.0
-    #   if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
-    #   with:
-    #     timeout_minutes: 30
-    #     max_attempts: 1 #1 attempt/minute = 30 attempts 
-    #     retry_wait_seconds: 60 
-    #     command: |
-    #         pip install requests && python ${{github.workspace}}/.github/scripts/query_observe.py
+    - name: Data Validation Test 
+      uses: nick-fields/retry@v2.9.0
+      if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
+      with:
+        timeout_minutes: 30
+        max_attempts: 1 #1 attempt/minute = 30 attempts 
+        retry_wait_seconds: 60 
+        command: |
+            pip install requests && python ${{github.workspace}}/.github/scripts/query_observe.py
     
 
     - name: Data Validation Test
