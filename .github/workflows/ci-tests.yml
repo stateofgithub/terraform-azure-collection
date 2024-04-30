@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
         run:
-            working-directory: ${{github.workspace}}/.github/terraform
+            working-directory: ${{github.workspace}}/.github/terraform2
     env:
       #this is needed since we are running terraform with read-only permissions
       ARM_SKIP_PROVIDER_REGISTRATION: true
