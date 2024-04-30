@@ -4,7 +4,9 @@ name: 'Azure - CI Tests'
 on:
   pull_request:
     types: [reopened, opened, synchronize, edited, closed]
-
+  push:
+    branches:
+      - main
 
 
 #Special permissions required for OIDC authentication
