@@ -11,14 +11,13 @@ terraform {
 }
 
 
-module "terraform-azure-collection" {
-  source                  = "../../"
-  observe_customer        = var.observe_customer
-  observe_domain          = var.observe_domain
-  location                = var.location
-  observe_token           = observe_datastream_token.github_actions_branch_token.secret
-  function_app_debug_logs = true
-}
+###  OBSERVE TOKEN SETUP ####
+
+# Uses Github Actions Environment Variables for below 
+# OBSERVE_CUSTOMER
+# OBSERVE_DOMAIN
+# OBSERVE_USER_EMAIL
+# OBSERVE_USER_PASSWORD 
 
 
 data "observe_workspace" "default" {
@@ -41,3 +40,12 @@ resource "observe_datastream_token" "github_actions_branch_token" {
   name       = var.branch
 }
 
+##  AZURE TF COLLECTION ## 
+module "terraform-azure-collection" {
+  source                  = "../../"
+  observe_customer        = var.observe_customer
+  observe_domain          = var.observe_domain
+  location                = var.location
+  observe_token           = observe_datastream_token.github_actions_branch_token.secret
+  function_app_debug_logs = true
+}
