@@ -127,6 +127,7 @@ jobs:
         azure_dataset_id=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
         export "OBSERVE_TOKEN_ID=$observe_token_id" >> $GITHUB_ENV
         export "AZURE_DATASET_ID=$azure_dataset_id" >> $GITHUB_ENV
+        echo $terraform_output
         
     # - name: Data Validation Test 
     #   uses: nick-fields/retry@v2.9.0
