@@ -1,7 +1,57 @@
 name: 'Azure - CI Tests'
-
+#This will create and destroy ephemeral resource groups according to GITHUB_REF and do data validaiton 
 
 on:
-  workflow_dispatch: 
-  schedule:
-    - cron: '0 5 * * *' # runs nightly at 5am
+  pull_request:
+    types: [reopened, opened, synchronize, edited, closed]
+  push:
+    branches:
+      - main
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false 
+
+
+#Special permissions required for OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+
+#These environment variables are used by the terraform azure provider to setup OIDD authenticate. 
+env:
+  ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}" # Needed for azure provider service account 
+  ARM_CLIENT_SECRET: "${{ secrets.AZURE_CLIENT_SECRET }}" # Needed for azure provider service account 
+  ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}" # Needed for azure provider service account 
+  ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}" # Needed for azure provider service account   
+  OBSERVE_CUSTOMER: ${{ vars.OBSERVE_CUSTOMER}} #Needed for observe.tf
+  OBSERVE_DOMAIN: ${{ vars.OBSERVE_DOMAIN}} #Needed for observe.tf
+  OBSERVE_USER_EMAIL: ${{ secrets.OBSERVE_USER_EMAIL}} #Needed for observe.tf
+  OBSERVE_USER_PASSWORD: ${{ secrets.OBSERVE_USER_PASSWORD}} #Needed for observe.tf
+  TF_VAR_observe_customer: "${{ vars.OBSERVE_CUSTOMER}}" #Fed to terraform-azure-collection 
+  TF_VAR_observe_domain: "${{ vars.OBSERVE_DOMAIN }}" #Fed to terraform-azure-collection 
+  TF_VAR_location: "centralus"  #CI Tests resource groups are created in centralus 
+  TF_VAR_prevent_rg_deletion: "false" #CI Tests resource groups can be delete in a destroy 
+
+jobs:
+    
+  ci-tests-ephemeral:
+    name: 'Collection CI Tests'
+    runs-on: ubuntu-latest
+    defaults:
+        run:
+            working-directory: ${{github.workspace}}/.github/terraform
+    env:
+      #this is needed since we are running terraform with read-only permissions
+      ARM_SKIP_PROVIDER_REGISTRATION: true
+     
+    outputs:
+      tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v4
