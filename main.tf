@@ -146,7 +146,8 @@ resource "azurerm_service_plan" "observe_service_plan" {
   location            = azurerm_resource_group.observe_resource_group.location
   resource_group_name = azurerm_resource_group.observe_resource_group.name
   os_type             = "Linux"
-  sku_name            = "Y1"
+  sku_name            = "P1v3"
+  
 }
 
 resource "azurerm_storage_account" "observe_storage_account" {
