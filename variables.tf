@@ -134,3 +134,10 @@ variable "prevent_rg_deletion" {
   default     = true
   description = "Prevent resource group deletion if resource group is not empty.  Defaults to true."
 }
+
+
+variable "function_app_debug_logs" {
+  type        = bool
+  default     = false
+  description = "Enables routing of function app logs to eventhub for debugging eventhub & function app"
+}
