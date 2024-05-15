@@ -7,7 +7,8 @@ on:
   push:
     branches:
       - main
-
+  schedule:
+    - cron: '0 0 * * *' #At 00:00Z Daily 
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -75,7 +76,7 @@ jobs:
        python ${{github.workspace}}/.github/scripts/create_override_collection.py
        echo "Setting additional TF_VAR variables"
        python ${{github.workspace}}/.github/scripts/set_additional_tf_variables.py 
-      
+             
    
     #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
@@ -182,10 +183,6 @@ jobs:
       uses: josStorer/get-current-time@v2
       id: current-time
 
-    - name: Wait after Apply for Azure Changes 
-      if:  steps.tf-apply.outcome != 'failure' && steps.tf-plan.outputs.exitcode == 2 && github.event.pull_request.state != 'closed'
-      run: sleep 300s
-      shell: bash
 
     # Set environment variables for data validation from terraform output 
     - name: Set Data Validation Variables 
@@ -207,7 +204,7 @@ jobs:
       uses: nick-fields/retry@v3
       if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
       with:
-        timeout_minutes: 30
+        timeout_minutes: 40
         max_attempts: 40 #Max 40 attempts (resource data can take longer depending on when the next cron job runs)
         retry_wait_seconds: 60  #1 attempt/minute
         command: |
