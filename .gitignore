@@ -143,3 +143,9 @@ tfplan
 .DS_Store
 
 *.zip
+
+#GH Actions
+.github/scripts/*.json
+Eventhub.json
+ResourceManagement.json
+VmMetrics.json

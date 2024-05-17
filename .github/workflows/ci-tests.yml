@@ -7,7 +7,8 @@ on:
   push:
     branches:
       - main
-
+  schedule:
+    - cron: '0 0 * * *' #At 00:00Z Daily 
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -55,3 +56,167 @@ jobs:
     # Checkout the repository to the GitHub Actions runner
     - name: Checkout
       uses: actions/checkout@v4
+    
+        # Install the latest version of the Terraform CLI
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_wrapper: false
+
+    # Install Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+         python-version: '3.10' 
+
+    - name: Create Override File
+      working-directory: ${{github.workspace}} #Switch so override file is created at root 
+      run: |      
+       echo "Creating override.tf.json" 
+       python ${{github.workspace}}/.github/scripts/create_override_collection.py
+       echo "Setting additional TF_VAR variables"
+       python ${{github.workspace}}/.github/scripts/set_additional_tf_variables.py 
+             
+   
+    #Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      id: init
+      run: |      
+        terraform init -no-color \
+          -backend-config="resource_group_name=rg-terraform-github-actions-state" \
+          -backend-config="storage_account_name=citeststfazurecollection" \
+          -backend-config="container_name=tfstate" \
+          -backend-config="key=${{  env.TF_VAR_branch }}/.tfstate"    
+
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    # Will fail the build if not
+    - name: Terraform Format
+      if: github.event.pull_request.state != 'closed'
+      run: terraform fmt -check
+
+    - name: Terraform Validate
+      if: github.event.pull_request.state != 'closed'
+      id: validate
+      run: terraform validate -no-color
+
+    # Generates an execution plan for Terraform
+    # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
+    - name: Terraform Plan
+      id: tf-plan
+      if: github.event.pull_request.state != 'closed'
+      run: |
+        export exitcode=0
+        terraform plan -detailed-exitcode -no-color -out tfplan || export exitcode=$?
+        echo "exitcode=$exitcode" >> $GITHUB_OUTPUT        
+        if [ $exitcode -eq 1 ]; then
+          echo Terraform Plan Failed!
+          exit 1
+        else 
+          exit 0
+        fi
+
+    ## Save plan to artifacts  
+    - name: Publish Terraform Plan
+      if: github.event.pull_request.state != 'closed'
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: ${{github.workspace}}/.github/terraform/tfplan
+            
+
+    # Create string output of Terraform Plan
+    - name: Create String Output
+      if: github.event.pull_request.state != 'closed'
+      id: tf-plan-string
+      run: |
+        TERRAFORM_PLAN=$(terraform show -no-color tfplan)
+        
+        delimiter="$(openssl rand -hex 8)"
+        echo "summary<<${delimiter}" >> $GITHUB_OUTPUT
+        echo "## Terraform Plan Output" >> $GITHUB_OUTPUT
+        echo "<details><summary>Click to expand</summary>" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo '```terraform' >> $GITHUB_OUTPUT
+        echo "$TERRAFORM_PLAN" >> $GITHUB_OUTPUT
+        echo '```' >> $GITHUB_OUTPUT
+        echo "</details>" >> $GITHUB_OUTPUT
+        echo "${delimiter}" >> $GITHUB_OUTPUT
+      
+    # Publish Terraform Plan as task summary
+    - name: Publish Terraform Plan to Task Summary
+      if: github.event.pull_request.state != 'closed'
+      env:
+        SUMMARY: ${{ steps.tf-plan-string.outputs.summary }}
+      run: |
+        echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+
+    # If this is a PR post the changes
+    - name: Push Terraform Output to PR
+      if: github.ref != 'refs/heads/main' && github.event.pull_request.state != 'closed'
+      uses: actions/github-script@v7
+      env:
+        SUMMARY: "${{ steps.tf-plan-string.outputs.summary }}"
+      with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const body = `${process.env.SUMMARY}`;
+            github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+            })
+            
+    - name: Error in Terraform 
+      if: steps.tf-plan.outputs.exitcode == 1  && github.event.pull_request.state != 'closed'
+      run: exit 1
+
+    # Terraform Apply if no errors in plan & changes detected (Exit Code 2)
+    - name: Terraform Apply 
+      id: tf-apply    
+      if: steps.tf-plan.outputs.exitcode == 2 && github.event.pull_request.state != 'closed'
+      run: |
+        terraform apply -auto-approve tfplan  
+
+    - name: Get current time
+      uses: josStorer/get-current-time@v2
+      id: current-time
+
+
+    # Set environment variables for data validation from terraform output 
+    - name: Set Data Validation Variables 
+      id: prepare-data-validation
+      if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
+      run: |
+        terraform_output=$(terraform output -json)  
+        observe_token_id=$(echo $terraform_output | jq -r '.observe_token_id.value')
+        azure_dataset_id=$(echo $terraform_output | jq -r '.azure_dataset_id.value')
+        azure_collection_function=$(echo $terraform_output | jq -r '.azure_collection_function.value')
+        current_time_iso="${{ steps.current-time.outputs.time }}"
+        echo "OBSERVE_TOKEN_ID=$observe_token_id" >> $GITHUB_ENV
+        echo "AZURE_DATASET_ID=$azure_dataset_id" >> $GITHUB_ENV
+        echo "AZURE_COLLECTION_FUNCTION=$azure_collection_function" >> $GITHUB_ENV
+        echo "CURRENT_TIME_ISO=$current_time_iso" >> $GITHUB_ENV
+        
+      
+    - name: Data Validation Test 
+      uses: nick-fields/retry@v3
+      if:  steps.tf-apply.outcome != 'failure' && github.event.pull_request.state != 'closed'
+      with:
+        timeout_minutes: 40
+        max_attempts: 40 #Max 40 attempts (resource data can take longer depending on when the next cron job runs)
+        retry_wait_seconds: 60  #1 attempt/minute
+        command: |
+            pip install requests && python ${{github.workspace}}/.github/scripts/query_observe.py
+
+    # Terraform Destroy 
+    - name: Terraform Destroy 
+      if: github.event.pull_request.merged == true || github.event.pull_request.state == 'closed' 
+      run: |
+        echo "PR ${{ github.event.number }} has been closed or merged" 
+        echo "Destroying infrastructure"
+        terraform destroy -auto-approve 
+  
+
+
