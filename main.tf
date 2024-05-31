@@ -172,7 +172,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
   storage_account_name       = azurerm_storage_account.observe_storage_account.name
   storage_account_access_key = azurerm_storage_account.observe_storage_account.primary_access_key
 
-  app_settings = {
+  app_settings = merge({
     WEBSITE_RUN_FROM_PACKAGE                      = var.func_url
     AzureWebJobsDisableHomepage                   = true
     OBSERVE_DOMAIN                                = var.observe_domain
@@ -188,7 +188,7 @@ resource "azurerm_linux_function_app" "observe_collect_function_app" {
     EVENTHUB_TRIGGER_FUNCTION_EVENTHUB_CONNECTION = "${azurerm_eventhub_authorization_rule.observe_eventhub_access_policy.primary_connection_string}"
     # Pending resolution of https://github.com/hashicorp/terraform-provider-azurerm/issues/18026
     # APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.observe_insights.instrumentation_key 
-  }
+  }, var.app_settings)
 
   identity {
     type = "SystemAssigned"

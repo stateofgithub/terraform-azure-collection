@@ -141,3 +141,10 @@ variable "function_app_debug_logs" {
   default     = false
   description = "Enables routing of function app logs to eventhub for debugging eventhub & function app"
 }
+
+
+variable "app_settings" {
+  type    = map(string)
+  default = {}
+  description = "Additional app settings"
+}
