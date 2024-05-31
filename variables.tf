@@ -20,7 +20,7 @@ variable "observe_domain" {
 variable "timer_resources_func_schedule" {
   type        = string
   description = "Eventhub name to use for resources function"
-  default     = "0 */10 * * * *"
+  default     = "0 */20 * * * *"
 }
 
 variable "timer_vm_metrics_func_schedule" {
